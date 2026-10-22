@@ -1,0 +1,25 @@
+:root {
+  --font-display: 'Orbitron', sans-serif;
+  --font-subheading: 'Rajdhani', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  font-family: var(--font-body);
+  color: #f4f7ff;
+  background: #050914;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  scroll-behavior: smooth;
+}
+
+* { box-sizing: border-box; }
+body { min-width: 320px; margin: 0; background: #050914; color: #f4f7ff; font-family: var(--font-body); }
+button, a, input, select { font-family: inherit; }
+button { color: inherit; }
+::selection { color: #071126; background: #5b91ff; }
+
+#root { min-height: 100vh; }
