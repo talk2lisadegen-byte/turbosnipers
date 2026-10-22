@@ -1355,21 +1355,6 @@ function App() {
         )}
       </header>
 
-      {/* Real-time Whale Ticker Alert (Below Header & Logo) */}
-      <aside className="top-radar-ticker" aria-label="Real-time on-chain stream">
-        <div className="radar-ticker-content">
-          <span className="radar-badge">
-            <i className="pulse-dot"></i> DUNE & PUMPPORTAL ON-CHAIN RADAR
-          </span>
-          <span className="ticker-text">{latestSnipeFlash}</span>
-          <span className="ticker-stat">
-            <b>TRACKED PROFIT:</b> ${totalProfitTracked.toLocaleString()}
-          </span>
-          <a href={BOT_LINK} target="_blank" rel="noreferrer" className="ticker-cta">
-            SNIPE WITH BOT ↗
-          </a>
-        </div>
-      </aside>
 
       {cookieNoticeVisible && (
         <aside className="cookie-banner" aria-label="Cookie notice">
@@ -1682,6 +1667,9 @@ function App() {
                 </div>
 
                 {/* Tabular Form of Tracked Profit */}
+                <div className="profit-scroll-hint">
+                  <span className="hint-icon">⇄</span> Scroll table sideways to view full columns & status
+                </div>
                 <div className="profit-table-wrapper">
                   <div className="profit-table" role="table" aria-label="Tracked Profit Table">
                     <div className="profit-table-head" role="row">
@@ -1772,6 +1760,22 @@ function App() {
             <span>01</span><i></i> PRECISION OVER NOISE
           </div>
         </section>
+
+        {/* Real-time Whale Ticker Alert (Moved down below Hero section) */}
+        <aside className="top-radar-ticker" aria-label="Real-time on-chain stream">
+          <div className="radar-ticker-content">
+            <span className="radar-badge">
+              <i className="pulse-dot"></i> DUNE & PUMPPORTAL ON-CHAIN RADAR
+            </span>
+            <span className="ticker-text">{latestSnipeFlash}</span>
+            <span className="ticker-stat">
+              <b>TRACKED PROFIT:</b> ${totalProfitTracked.toLocaleString()}
+            </span>
+            <a href={BOT_LINK} target="_blank" rel="noreferrer" className="ticker-cta">
+              SNIPE WITH BOT ↗
+            </a>
+          </div>
+        </aside>
 
         {/* SECTION: REALTIME TOP PROJECTS, CHARTS & MASSIVE PROFIT TRADERS */}
         <section className="top-traders-section" id="trader-radar">
