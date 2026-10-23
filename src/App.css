@@ -273,7 +273,10 @@ main, .site-header, .top-radar-ticker, .site-footer {
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 99;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 .brand {
@@ -454,16 +457,18 @@ main, .site-header, .top-radar-ticker, .site-footer {
 
 .resource-menu {
   position: absolute;
-  top: 76px;
+  top: calc(100% + 8px);
   right: max(4vw, 24px);
   width: 270px;
+  max-width: calc(100vw - 24px);
   padding: 16px;
   background: #0c0e12;
   border: 1px solid #32353d;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
-  z-index: 100;
+  z-index: 1000;
   animation: rise-in 0.2s both;
   border-radius: 6px;
+  box-sizing: border-box;
 }
 
 .menu-caption {
@@ -2923,23 +2928,63 @@ html, body {
   color: #738092;
 }
 
+.profit-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--cyan);
+  background: rgba(0, 229, 255, 0.06);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profit-scroll-hint .hint-icon {
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .profit-table-wrapper {
   border: 1px solid #1c2636;
   border-radius: 6px;
   background: #090e16;
-  overflow-x: auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto !important;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cyan) #090e16;
+}
+
+.profit-table-wrapper::-webkit-scrollbar {
+  height: 5px;
+}
+.profit-table-wrapper::-webkit-scrollbar-track {
+  background: #090e16;
+}
+.profit-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.4);
+  border-radius: 3px;
 }
 
 .profit-table {
   width: 100%;
-  min-width: 480px;
+  min-width: 550px;
   border-collapse: collapse;
 }
 
 .profit-table-head {
   display: grid;
-  grid-template-columns: 140px 90px 80px 125px 75px;
+  grid-template-columns: 140px 90px 80px 135px 95px;
   align-items: center;
   padding: 8px 12px;
   background: #0d1522;
@@ -2949,6 +2994,8 @@ html, body {
   font-weight: 700;
   color: #79889a;
   letter-spacing: 0.5px;
+  min-width: 550px;
+  box-sizing: border-box;
 }
 
 .profit-table-scroll-body {
@@ -2956,16 +3003,21 @@ html, body {
   flex-direction: column;
   max-height: 290px;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 550px;
+  width: 100%;
 }
 
 .profit-table-row {
   display: grid;
-  grid-template-columns: 140px 90px 80px 125px 75px;
+  grid-template-columns: 140px 90px 80px 135px 95px;
   align-items: center;
   padding: 9px 12px;
   border-bottom: 1px solid #141d2a;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
+  min-width: 550px;
+  box-sizing: border-box;
 }
 
 .profit-table-row:last-child {
@@ -3253,51 +3305,63 @@ html, body {
 
   /* Site Header at Top */
   .site-header {
-    height: 66px;
-    padding: 0 16px;
+    height: 64px;
+    padding: 0 14px;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow: visible;
   }
   .brand {
-    gap: 10px;
+    gap: 8px;
+    min-width: 0;
+    flex-shrink: 1;
   }
   .brand-logo-wrap {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
   }
   .brand-name {
-    font-size: 15px; /* was 13px (+2px) */
+    font-size: 14px; /* was 13px (+2px) */
   }
   .brand-sub {
     display: none;
   }
   .header-sol-price {
-    padding: 6px 10px;
+    padding: 5px 8px;
     margin-left: auto;
     margin-right: 8px;
-    gap: 6px;
+    gap: 5px;
+    flex-shrink: 0;
   }
   .header-sol-label {
     display: none;
   }
   .solana-glyph {
-    font-size: 17px; /* was 15px (+2px) */
+    font-size: 16px;
   }
   .header-sol-price strong {
-    font-size: 13px; /* was 11px (+2px) */
+    font-size: 12px;
     min-width: auto;
   }
   .feed-state {
-    font-size: 10.5px; /* was 8.5px (+2px) */
+    font-size: 9.5px;
   }
   .menu-toggle {
     width: 38px;
     height: 38px;
     flex-shrink: 0;
+    margin-left: 0;
   }
   .resource-menu {
-    top: 68px;
-    right: 14px;
-    width: min(calc(100vw - 28px), 280px);
-    font-size: 15px; /* was 13px (+2px) */
+    top: calc(100% + 6px);
+    right: 12px;
+    left: auto;
+    width: 250px;
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+    z-index: 1000;
   }
 
   /* Realtime Ticker Alert (Below Header) */
@@ -3930,42 +3994,60 @@ html, body {
 /* SMALL PHONES (max-width: 480px) */
 @media (max-width: 480px) {
   .site-header {
-    height: 62px;
-    padding: 0 12px;
+    height: 58px;
+    padding: 0 10px;
+  }
+  .brand {
+    gap: 6px;
   }
   .brand-logo-wrap {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
   }
   .brand-name {
-    font-size: 13.5px; /* was 11.5px (+2px) */
-    letter-spacing: 0.5px;
+    font-size: 12.5px;
+    letter-spacing: 0.3px;
   }
   .header-sol-price {
-    padding: 4px 7px;
+    padding: 3px 6px;
     margin-right: 6px;
-    gap: 4px;
-  }
-  .header-sol-price strong {
-    font-size: 12.5px; /* was 10.5px (+2px) */
-  }
-  .feed-state {
-    font-size: 9.5px; /* was 7.5px (+2px) */
     gap: 3px;
   }
-  .feed-state i {
-    width: 5px;
-    height: 5px;
+  .header-sol-price strong {
+    font-size: 11px;
+  }
+  .feed-state {
+    display: none; /* Hide feed state on small phones to keep hamburger menu perfectly framed */
   }
   .menu-toggle {
     width: 34px;
     height: 34px;
+    flex-shrink: 0;
+  }
+  .resource-menu {
+    top: calc(100% + 4px);
+    right: 8px;
+    width: calc(100vw - 16px);
+    max-width: 250px;
   }
   .top-radar-ticker {
     padding: 9px 12px;
   }
   .hero-section {
-    padding: 26px 12px 22px;
+    padding: 24px 10px 20px;
+    overflow-x: clip;
+    max-width: 100vw;
+  }
+  .profit-hero-metric {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px;
+  }
+  .metric-right {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
   }
   .top-traders-section {
     padding: 36px 12px 28px;
