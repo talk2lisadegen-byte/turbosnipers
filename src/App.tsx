@@ -1,2442 +1,4229 @@
-import { useEffect, useState, useRef, useMemo } from 'react'
-import './App.css'
+/* Fonts are loaded asynchronously via index.html with preconnect */
 
-const BOT_LINK = 'https://t.me/TurboSniperProbot'
+.site-shell {
+  --black: #050914;
+  --panel: #0b1222;
+  --panel-2: #111c31;
+  --panel-card: rgba(13, 23, 42, 0.88);
+  --line: #26344d;
+  --line-glow: rgba(76, 137, 255, 0.28);
+  --muted: #777d87;
+  --soft: #b8bdc6;
+  --white: #f4f7ff;
+  --cyan: #5b91ff;
+  --cyan-glow: rgba(76, 137, 255, 0.42);
+  --magenta: #a9c7ff;
+  --magenta-glow: rgba(142, 183, 255, 0.34);
+  --green: #00ff88;
+  --green-glow: rgba(0, 255, 136, 0.3);
+  --font-display: 'Orbitron', sans-serif;
+  --font-subheading: 'Rajdhani', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
-const DEX_SEARCH_TERMS = [
-  'pump', 'bonk', 'ray', 'jup', 'wif', 'jito', 'orca', 'popcat', 'bome', 'myro', 'mew', 'pnut', 'goat', 'fartcoin',
-  'solana', 'meme', 'cat', 'dog', 'ai', 'launch', 'frog', 'coin', 'moon', 'trump', 'pepe', 'community', 'degen', 'swap',
-  'moodeng', 'chillguy', 'act', 'ponke', 'giga', 'retardio', 'zerebro', 'fwog', 'spx', 'bully', 'ai16z', 'michi', 'melania', 'slerf', 'ban'
-]
-const EXCLUDED_CHAINS = new Set(['robinhood'])
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--font-body);
+  position: relative;
+}
 
-function getScanTerms() {
-  const terms = [...DEX_SEARCH_TERMS]
-  for (let index = terms.length - 1; index > 0; index--) {
-    const swapIndex = Math.floor(Math.random() * (index + 1))
-      ;[terms[index], terms[swapIndex]] = [terms[swapIndex], terms[index]]
+/* ================= LIVE CYBER BACKGROUND ================= */
+.live-cyber-background {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.cyber-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+}
+
+.cyber-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(42, 242, 223, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(42, 242, 223, 0.045) 1px, transparent 1px);
+  background-size: 55px 55px;
+  background-position: -1px -1px;
+  mask-image: radial-gradient(ellipse at 50% 30%, black 35%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 35%, transparent 85%);
+  z-index: 2;
+  animation: grid-pulse 8s ease-in-out infinite alternate;
+}
+
+.radar-sweep-beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(42, 242, 223, 0.35), rgba(218, 54, 255, 0.75), rgba(42, 242, 223, 0.35), transparent);
+  box-shadow: 0 0 20px rgba(42, 242, 223, 0.6), 0 0 40px rgba(218, 54, 255, 0.4);
+  z-index: 3;
+  animation: radar-sweep 11s linear infinite;
+}
+
+.cyber-ambient-aurora {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cyber-ambient-aurora.aurora-1 {
+  width: 720px;
+  height: 720px;
+  top: -120px;
+  left: -150px;
+  background: radial-gradient(circle, rgba(42, 242, 223, 0.14), transparent 70%);
+  filter: blur(85px);
+  animation: aurora-drift 18s ease-in-out infinite alternate;
+}
+
+.cyber-ambient-aurora.aurora-2 {
+  width: 680px;
+  height: 680px;
+  top: 38%;
+  right: -150px;
+  background: radial-gradient(circle, rgba(218, 54, 255, 0.13), transparent 70%);
+  filter: blur(95px);
+  animation: aurora-drift-2 22s ease-in-out infinite alternate;
+}
+
+.cyber-ambient-aurora.aurora-3 {
+  width: 580px;
+  height: 580px;
+  bottom: 6%;
+  left: 18%;
+  background: radial-gradient(circle, rgba(0, 255, 136, 0.08), transparent 70%);
+  filter: blur(80px);
+  animation: aurora-drift 16s ease-in-out infinite alternate-reverse;
+}
+
+.cyber-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 4;
+}
+
+@keyframes grid-pulse {
+  0% { opacity: 0.55; }
+  50% { opacity: 1; }
+  100% { opacity: 0.55; }
+}
+
+@keyframes radar-sweep {
+  0% {
+    transform: translateY(-10px);
+    opacity: 0;
   }
-  return terms.slice(0, 12)
-}
-
-type VolumeCoin = {
-  chainId: string
-  address: string
-  symbol: string
-  pair: string
-  volume: number
-  change: number | null
-  liquidity: number
-  priceUsd?: number
-  imageUrl?: string
-  pairAddress?: string
-  buys24h: number
-  sells24h: number
-}
-
-type DexPair = {
-  chainId?: string
-  pairAddress?: string
-  url?: string
-  baseToken?: { address?: string; symbol?: string; name?: string }
-  priceUsd?: string
-  volume?: { h24?: number }
-  liquidity?: { usd?: number }
-  priceChange?: { h24?: number }
-  txns?: { h24?: { buys?: number; sells?: number } }
-  info?: { imageUrl?: string }
-}
-
-type DexSearchResponse = { pairs?: DexPair[] }
-type SolPriceResponse = { solana?: { usd?: number } }
-
-export type TopProject = {
-  chainId: string
-  symbol: string
-  name: string
-  address: string
-  pairAddress: string
-  priceUsd: number
-  change24h: number
-  volume24h: number
-  liquidity: number
-  imageUrl: string
-  lowEntryPrice: number
-  highExitPrice: number
-  maxMultiplier: string
-  firstSeen: string
-  dexUrl?: string
-}
-
-export type TopTraderRecord = {
-  id: string
-  wallet: string
-  fullWallet: string
-  source: 'dune' | 'pumpportal'
-  sourceLabel: string
-  rankBadge: string
-  tokenSymbol: string
-  tokenName: string
-  tokenLogo: string
-  buyPrice: number
-  currentPrice: number
-  buyUsd: number
-  buySol: number
-  profitUsd: number
-  profitSol: number
-  multiplier: number
-  timeAgo: string
-  snipeSpeed: string
-  status: 'realized' | 'holding'
-  txSignature: string
-  notes?: string
-  isNew?: boolean
-}
-
-export type MemecoinMeta = {
-  symbol: string
-  name: string
-  logo: string
-  mintAddress?: string
-  pairAddress?: string
-  defaultBuyUsd: number
-  defaultBuySol: number
-  defaultProfitUsd: number
-  defaultProfitSol: number
-  multiplier: number
-  snipeSpeed: string
-  rankBadge: string
-  notes: string
-  dexUrl?: string
-}
-
-export const TOP_SOLANA_MEMECOINS: MemecoinMeta[] = [
-  {
-    symbol: 'WIF',
-    name: 'dogwifhat',
-    logo: 'https://cdn.dexscreener.com/cms/images/A2ezWSQLmHLy0JJv?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm',
-    pairAddress: 'GDpmaKaQysQtYCWnru3fi8FRfvJs8eW8sw3PoRzMFvqN',
-    defaultBuyUsd: 560,
-    defaultBuySol: 4.0,
-    defaultProfitUsd: 1321600,
-    defaultProfitSol: 9440,
-    multiplier: 2360.0,
-    snipeSpeed: 'Dec 2023 Early Raydium',
-    rankBadge: '#1 GENESIS TITAN',
-    notes: 'Bought $560 (4 SOL) in the first minutes of trading. Legendary hold extracting over $1.32 Million in net profit.',
-    dexUrl: 'https://dexscreener.com/solana/GDpmaKaQysQtYCWnru3fi8FRfvJs8eW8sw3PoRzMFvqN',
-  },
-  {
-    symbol: 'PNUT',
-    name: 'Peanut the Squirrel',
-    logo: 'https://cdn.dexscreener.com/cms/images/778498984ea5b6eb7c9d74e1e81a2547c88a41ae80f6c840c94a7c3b7829bcd5?width=800&height=800&quality=95&format=auto',
-    mintAddress: '2qEHjDLDLbuBgRYvsxhc5D6uDWAivNFZGan56P1tpump',
-    pairAddress: '4AZRPNEfCJ7iw28rJu5aUyeQhYcvdcNm8cswyL51AY9i',
-    defaultBuyUsd: 350,
-    defaultBuySol: 2.5,
-    defaultProfitUsd: 422500,
-    defaultProfitSol: 3018,
-    multiplier: 124.4,
-    snipeSpeed: 'Block +1 LP Snipe',
-    rankBadge: '#2 APEX SNIPER',
-    notes: 'Bought for $350 in block +1 of liquidity pool creation. Realized +$422,500 total profit on laddered sells.',
-    dexUrl: 'https://dexscreener.com/solana/4AZRPNEfCJ7iw28rJu5aUyeQhYcvdcNm8cswyL51AY9i',
-  },
-  {
-    symbol: 'POPCAT',
-    name: 'Popcat',
-    logo: 'https://cdn.dexscreener.com/cms/images/Pp6Fvh41hc0bHGK8?width=800&height=800&quality=95&format=auto',
-    mintAddress: '7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr',
-    pairAddress: 'FRhB8L7Y9Qq41qZXYLtC2nw8An1RJfLLxRF2x9RwLLMo',
-    defaultBuyUsd: 1680,
-    defaultBuySol: 12.0,
-    defaultProfitUsd: 408800,
-    defaultProfitSol: 2920,
-    multiplier: 243.3,
-    snipeSpeed: 'Micro-cap snipe',
-    rankBadge: '#3 WHALE APEX',
-    notes: 'Invested $1,680 (12 SOL) at $14k market cap bottom. Banked +$408,800 (+243.3x) with verified transfers.',
-    dexUrl: 'https://dexscreener.com/solana/FRhB8L7Y9Qq41qZXYLtC2nw8An1RJfLLxRF2x9RwLLMo',
-  },
-  {
-    symbol: 'FARTCOIN',
-    name: 'Fartcoin',
-    logo: 'https://cdn.dexscreener.com/cms/images/9af5672845c89585e9ff1e3b26a640090324aa4d92222052d1043e60ef8182de?width=800&height=800&quality=95&format=auto',
-    mintAddress: '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump',
-    pairAddress: 'Bzc9NZfMqkXR6fz1DBph7BDf9BroyEf6pnzESP7v5iiw',
-    defaultBuyUsd: 1190,
-    defaultBuySol: 8.5,
-    defaultProfitUsd: 119600,
-    defaultProfitSol: 854,
-    multiplier: 100.5,
-    snipeSpeed: 'Migration Block +1',
-    rankBadge: '#4 CURVE SNIPER',
-    notes: 'Bought $1,190 at Pump.fun migration completion. Sold at peak for +$119,600 profit (100.5x return).',
-    dexUrl: 'https://dexscreener.com/solana/Bzc9NZfMqkXR6fz1DBph7BDf9BroyEf6pnzESP7v5iiw',
-  },
-  {
-    symbol: 'GOAT',
-    name: 'Goatseus Maximus',
-    logo: 'https://cdn.dexscreener.com/cms/images/e857505d98436d21d13451a83c93ff4db36d0b53829af8070ddae75845d9b459?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'CzLSujWBLFsSjncfkh59rUFqvafWcY5tzedWJSuypump',
-    pairAddress: '9Tb2ohu5P16BpBarqd3N27WnkF51Ukfs8Z1GzzLDxVZW',
-    defaultBuyUsd: 896,
-    defaultBuySol: 6.4,
-    defaultProfitUsd: 60500,
-    defaultProfitSol: 432,
-    multiplier: 67.6,
-    snipeSpeed: 'AI Terminal Mint',
-    rankBadge: '#5 ALPHA WHALE',
-    notes: 'Executed automated snipe via Telegram bot. Turned $896 into +$60,500 net profit.',
-    dexUrl: 'https://dexscreener.com/solana/9Tb2ohu5P16BpBarqd3N27WnkF51Ukfs8Z1GzzLDxVZW',
-  },
-  {
-    symbol: 'BONK',
-    name: 'Bonk',
-    logo: 'https://cdn.dexscreener.com/cms/images/ba03c0370670d176dc33bbd212eb023337a460ad7edfa053ca96ae22f31c3dcf?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
-    pairAddress: '5zpyutJu9ee6jFymDGoK7F6S5Kczqtc9FomP3ueKuyA9',
-    defaultBuyUsd: 420,
-    defaultBuySol: 3.0,
-    defaultProfitUsd: 79000,
-    defaultProfitSol: 564,
-    multiplier: 37.6,
-    snipeSpeed: 'Pool injection',
-    rankBadge: '#6 ORCA SNIPER',
-    notes: 'Early Orca liquidity injection buyer. Initial buy of $420 turned into +$79,000 profit.',
-    dexUrl: 'https://dexscreener.com/solana/5zpyutJu9ee6jFymDGoK7F6S5Kczqtc9FomP3ueKuyA9',
-  },
-  {
-    symbol: 'MOODENG',
-    name: 'Moo Deng',
-    logo: 'https://cdn.dexscreener.com/cms/images/8e02e1e7dec93a4ef4b2404976232940a1d80595e774cf3c5f2d6f23026867a9?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY',
-    pairAddress: '22Wrmytj8x2Tr272wnBC26EDQ4zCSno4141AEYwWpump',
-    defaultBuyUsd: 280,
-    defaultBuySol: 2.0,
-    defaultProfitUsd: 382000,
-    defaultProfitSol: 2728,
-    multiplier: 136.4,
-    snipeSpeed: 'Pump.fun 12s Snipe',
-    rankBadge: '#7 VIRAL APEX',
-    notes: 'Sniped within 12 seconds of token bonding curve initialization. Sold ladder into multi-million volume.',
-    dexUrl: 'https://dexscreener.com/solana/ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY',
-  },
-  {
-    symbol: 'CHILLGUY',
-    name: 'Just a chill guy',
-    logo: 'https://cdn.dexscreener.com/cms/images/20ae19e21d577f3aead6ae8722a7a3a66c5376cbf11f10d278807bef32551b46?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'Df6yfrKC8kZE3KNkrHERKzAetSxbrWeniQfyJY4Jpump',
-    pairAddress: '71V3Hn4zL9mN6e7sT3wP1uX8yA4dB2kL9mF5eD2cA8pL',
-    defaultBuyUsd: 150,
-    defaultBuySol: 1.1,
-    defaultProfitUsd: 215000,
-    defaultProfitSol: 1535,
-    multiplier: 143.3,
-    snipeSpeed: 'Curve 35% Snipe',
-    rankBadge: '#8 VIRAL TITAN',
-    notes: 'Entered at $65k market cap with $150 buy. Cashed out +$215,000 as TikTok trend exploded.',
-    dexUrl: 'https://dexscreener.com/solana/Df6yfrKC8kZE3KNkrHERKzAetSxbrWeniQfyJY4Jpump',
-  },
-  {
-    symbol: 'ACT',
-    name: 'Act I : The AI Prophecy',
-    logo: 'https://cdn.dexscreener.com/cms/images/14201087ebafd2b8ca5c3242ddfd4e6cb0824b539ad0736ebea5ec03edefd214?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'GJAFwWjJ3vnTsrQVabjBVK2TYB1YtRCQXRDfDgUnpump',
-    pairAddress: '31p47FmN8vA2zY6aBbC4xR1dE9fU3wJ5sN8mP7kQ9mF5',
-    defaultBuyUsd: 490,
-    defaultBuySol: 3.5,
-    defaultProfitUsd: 290000,
-    defaultProfitSol: 2071,
-    multiplier: 59.2,
-    snipeSpeed: 'AI Terminal Mint',
-    rankBadge: '#9 AI APEX',
-    notes: 'Early Discord bot snipe at bonding curve. Harvested over $290,000 on major exchange spike.',
-    dexUrl: 'https://dexscreener.com/solana/GJAFwWjJ3vnTsrQVabjBVK2TYB1YtRCQXRDfDgUnpump',
-  },
-  {
-    symbol: 'AI16Z',
-    name: 'ai16z',
-    logo: 'https://cdn.dexscreener.com/cms/images/f88abc595c9b7385c582d97f9a113c8339f51ffc46d4bf25b96e49723b30e2da?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC',
-    pairAddress: '9xY4...daos',
-    defaultBuyUsd: 720,
-    defaultBuySol: 5.1,
-    defaultProfitUsd: 485000,
-    defaultProfitSol: 3464,
-    multiplier: 67.3,
-    snipeSpeed: 'Daos.fun Liquidity Buy',
-    rankBadge: '#10 DAO TITAN',
-    notes: 'Bought during genesis fund launch. Extracted +$485,000 during AI agent collective rally.',
-    dexUrl: 'https://dexscreener.com/solana/HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC',
-  },
-  {
-    symbol: 'PONKE',
-    name: 'PONKE',
-    logo: 'https://cdn.dexscreener.com/cms/images/cfbe2eabb540e7ba8651832435e968e12c9df2efb452e78358e64d8f73ae5760?width=800&height=800&quality=95&format=auto',
-    mintAddress: '5z3EqYQo9HiCEs3R84RCDMu2n7anpDMxRhdK8PSWmrRC',
-    pairAddress: 'DxqV...ponke',
-    defaultBuyUsd: 310,
-    defaultBuySol: 2.2,
-    defaultProfitUsd: 194000,
-    defaultProfitSol: 1385,
-    multiplier: 62.5,
-    snipeSpeed: 'Raydium Snipe',
-    rankBadge: '#11 ALPHA SNIPER',
-    notes: 'Automated snipe trigger on first Raydium block. Booked +$194,000 profit.',
-    dexUrl: 'https://dexscreener.com/solana/5z3EqYQo9HiCEs3R84RCDMu2n7anpDMxRhdK8PSWmrRC',
-  },
-  {
-    symbol: 'GIGA',
-    name: 'GIGACHAD',
-    logo: 'https://cdn.dexscreener.com/cms/images/102ba1dee6cf6239b293dbd86e0e11ddf78e74cdce00030c4511096bd2480e26?width=800&height=800&quality=95&format=auto',
-    mintAddress: '63LfDmNb3MQ8mw9MtZ2To9bEA2M71kZUUGq5tiJxcqj9',
-    pairAddress: 'Giga...pair',
-    defaultBuyUsd: 650,
-    defaultBuySol: 4.6,
-    defaultProfitUsd: 310000,
-    defaultProfitSol: 2214,
-    multiplier: 47.7,
-    snipeSpeed: 'Community Curve Buy',
-    rankBadge: '#12 CHAD TITAN',
-    notes: 'Invested $650 early. Held through major exchange listings for +$310,000 return.',
-    dexUrl: 'https://dexscreener.com/solana/63LfDmNb3MQ8mw9MtZ2To9bEA2M71kZUUGq5tiJxcqj9',
-  },
-  {
-    symbol: 'RETARDIO',
-    name: 'RETARDIO',
-    logo: 'https://cdn.dexscreener.com/cms/images/YaRcfdsS2j1Yn_rQ?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'CSRRgTwf9o5KLgguS2M16aEAhV5PUUzfshrAAQ8opump',
-    pairAddress: 'Ret...pair',
-    defaultBuyUsd: 190,
-    defaultBuySol: 1.35,
-    defaultProfitUsd: 148000,
-    defaultProfitSol: 1057,
-    multiplier: 77.8,
-    snipeSpeed: 'Block +2 Snipe',
-    rankBadge: '#13 CULT TITAN',
-    notes: 'Turned $190 entry into +$148,000 verified profit across multi-week ladder.',
-    dexUrl: 'https://dexscreener.com/solana/CSRRgTwf9o5KLgguS2M16aEAhV5PUUzfshrAAQ8opump',
-  },
-  {
-    symbol: 'ZEREBRO',
-    name: 'zerebro',
-    logo: 'https://cdn.dexscreener.com/cms/images/2eb3b0a304e9ed93ee44ff263a7cd1c5b376589644b70618aef104a037f391c2?width=800&height=800&quality=95&format=auto',
-    mintAddress: '8x5VqbHA8D7NkD52uNuS5nnt3PwA8pLD34ymskeSo2Wn',
-    pairAddress: 'Zere...pair',
-    defaultBuyUsd: 430,
-    defaultBuySol: 3.1,
-    defaultProfitUsd: 167000,
-    defaultProfitSol: 1192,
-    multiplier: 38.8,
-    snipeSpeed: 'Terminal Bot Launch',
-    rankBadge: '#14 AI RUNNER',
-    notes: 'Autonomous agent terminal trade. Banked +$167,000 on initial liquidity surge.',
-    dexUrl: 'https://dexscreener.com/solana/8x5VqbHA8D7NkD52uNuS5nnt3PwA8pLD34ymskeSo2Wn',
-  },
-  {
-    symbol: 'FWOG',
-    name: 'FWOG',
-    logo: 'https://cdn.dexscreener.com/cms/images/ceccc0a74f91ec3a5f6162005af09d1f6e8bdbdd6a55f49e43ac8b217b6ec8bd?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'A8C3xuqscfmyLrte3VmTqrAq8kgMASius9AFNANwpump',
-    pairAddress: 'Fwog...pair',
-    defaultBuyUsd: 380,
-    defaultBuySol: 2.7,
-    defaultProfitUsd: 226000,
-    defaultProfitSol: 1614,
-    multiplier: 59.4,
-    snipeSpeed: 'Pump Migration Snipe',
-    rankBadge: '#15 FROG KING',
-    notes: 'Bought at migration for $380, extracted +$226,000 as community flipped high beta.',
-    dexUrl: 'https://dexscreener.com/solana/A8C3xuqscfmyLrte3VmTqrAq8kgMASius9AFNANwpump',
-  },
-  {
-    symbol: 'SPX',
-    name: 'SPX6900',
-    logo: 'https://cdn.dexscreener.com/cms/images/4bb3c10a18160c945786d4bd3a990ddf2134fbc456524a476a70531776446b5e?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'J3NKxxXZcnNiMjKw9hYb2K4LUxgwB6t1FtPtQVsv3KFr',
-    pairAddress: 'Spx...pair',
-    defaultBuyUsd: 850,
-    defaultBuySol: 6.0,
-    defaultProfitUsd: 540000,
-    defaultProfitSol: 3857,
-    multiplier: 63.5,
-    snipeSpeed: 'Wormhole Bridge Influx',
-    rankBadge: '#16 INDEX TITAN',
-    notes: 'Sub-second bridge buy executed by whale sniper. Generated over $540,000.',
-    dexUrl: 'https://dexscreener.com/solana/J3NKxxXZcnNiMjKw9hYb2K4LUxgwB6t1FtPtQVsv3KFr',
-  },
-  {
-    symbol: 'TRUMP',
-    name: 'OFFICIAL TRUMP',
-    logo: 'https://cdn.dexscreener.com/cms/images/85a2613c51c8ded8e51b1b3910487ab66691cb60fecec7d0905481a603bba899?width=800&height=800&quality=95&format=auto',
-    mintAddress: '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
-    pairAddress: 'Trump...pair',
-    defaultBuyUsd: 1200,
-    defaultBuySol: 8.5,
-    defaultProfitUsd: 820000,
-    defaultProfitSol: 5857,
-    multiplier: 68.3,
-    snipeSpeed: 'Block 0 Mint Snipe',
-    rankBadge: '#17 POLITI-TITAN',
-    notes: 'Block 0 sniper extracted +$820,000 on official deployment announcement.',
-    dexUrl: 'https://dexscreener.com/solana/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
-  },
-  {
-    symbol: 'BULLY',
-    name: 'Dolos The Bully',
-    logo: 'https://cdn.dexscreener.com/cms/images/75e81cc260b5839127923517cc4dcd61361af939b45f1183bf978980a507760e?width=800&height=800&quality=95&format=auto',
-    mintAddress: '79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
-    pairAddress: 'Bully...pair',
-    defaultBuyUsd: 180,
-    defaultBuySol: 1.3,
-    defaultProfitUsd: 94000,
-    defaultProfitSol: 671,
-    multiplier: 52.2,
-    snipeSpeed: 'Pump.fun 8s Snipe',
-    rankBadge: '#18 FAST RUNNER',
-    notes: 'Turned $180 into +$94,000 during viral launch window.',
-    dexUrl: 'https://dexscreener.com/solana/79yTpy8uwmAkrdgZdq6ZSBTvxKsgPrNqTLvYQBh1pump',
-  },
-  {
-    symbol: 'BOME',
-    name: 'BOOK OF MEME',
-    logo: 'https://cdn.dexscreener.com/cms/images/1fdb1c93b76e5aed7324c2c541558fd75fe7ffb3d0d0fb9ee8370cbac5890e4e?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82',
-    pairAddress: 'Bome...pair',
-    defaultBuyUsd: 500,
-    defaultBuySol: 3.6,
-    defaultProfitUsd: 745000,
-    defaultProfitSol: 5321,
-    multiplier: 149.0,
-    snipeSpeed: 'Presale Genesis Pool',
-    rankBadge: '#19 GENESIS APEX',
-    notes: 'Presale liquidity pool injection sniper. Banked +$745,000.',
-    dexUrl: 'https://dexscreener.com/solana/ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82',
-  },
-  {
-    symbol: 'MEW',
-    name: 'cat in a dogs world',
-    logo: 'https://cdn.dexscreener.com/cms/images/33effe52dd5b1f6574ca5baaca9c02fecdecb557607a2a72889ceb0537eae9be?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'MEW1gQWJ3nEXg2qgERiKu7FAFj79PHvQVREQUzScPP5',
-    pairAddress: 'Mew...pair',
-    defaultBuyUsd: 620,
-    defaultBuySol: 4.4,
-    defaultProfitUsd: 410000,
-    defaultProfitSol: 2928,
-    multiplier: 66.1,
-    snipeSpeed: 'Early Raydium Swap',
-    rankBadge: '#20 FELINE TITAN',
-    notes: 'Airdrop liquidity addition buyer. Total realized profit over $410,000.',
-    dexUrl: 'https://dexscreener.com/solana/MEW1gQWJ3nEXg2qgERiKu7FAFj79PHvQVREQUzScPP5',
-  },
-  {
-    symbol: 'MICHI',
-    name: 'michi',
-    logo: 'https://cdn.dexscreener.com/cms/images/0EUG05iOzwtkFRAf?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'AywAYdNJnSLSXwKWYxDciPjqGRnwp4iZdQptuuQTpump',
-    pairAddress: 'Michi...pair',
-    defaultBuyUsd: 220,
-    defaultBuySol: 1.6,
-    defaultProfitUsd: 135000,
-    defaultProfitSol: 964,
-    multiplier: 61.3,
-    snipeSpeed: 'Pump.fun Curve Snipe',
-    rankBadge: '#21 MEME APEX',
-    notes: 'Turned $220 into +$135,000 with perfectly laddered limit exits.',
-    dexUrl: 'https://dexscreener.com/solana/AywAYdNJnSLSXwKWYxDciPjqGRnwp4iZdQptuuQTpump',
-  },
-  {
-    symbol: 'MELANIA',
-    name: 'Melania Meme',
-    logo: 'https://cdn.dexscreener.com/cms/images/b22b95643577c5b0eafa197f3ba9aa39194d97ed185ce8ebba92bb34dacf247e?width=800&height=800&quality=95&format=auto',
-    mintAddress: 'FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P',
-    pairAddress: 'Mel...pair',
-    defaultBuyUsd: 900,
-    defaultBuySol: 6.4,
-    defaultProfitUsd: 360000,
-    defaultProfitSol: 2571,
-    multiplier: 40.0,
-    snipeSpeed: 'Dex Launch Snipe',
-    rankBadge: '#22 FIRST LADY TITAN',
-    notes: 'Rapid liquidity entry upon pair announcement. Booked +$360,000.',
-    dexUrl: 'https://dexscreener.com/solana/FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P',
-  },
-  {
-    symbol: 'SLERF',
-    name: 'SLERF',
-    logo: 'https://cdn.dexscreener.com/cms/images/6f43abd0ed3d46732e02f2a5f15610beed2b25d0d25fac7aa4ca113d6f45012f?width=800&height=800&quality=95&format=auto',
-    mintAddress: '7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3',
-    pairAddress: 'Slerf...pair',
-    defaultBuyUsd: 750,
-    defaultBuySol: 5.3,
-    defaultProfitUsd: 490000,
-    defaultProfitSol: 3500,
-    multiplier: 65.3,
-    snipeSpeed: 'Burned LP Event Snipe',
-    rankBadge: '#23 SLOTH TITAN',
-    notes: 'Entered during infamous LP burn volatility. Realized +$490,000 net profit.',
-    dexUrl: 'https://dexscreener.com/solana/7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3',
-  },
-  {
-    symbol: 'BAN',
-    name: 'Comedian',
-    logo: 'https://cdn.dexscreener.com/cms/images/OR8mQueXtk06dMdG?width=800&height=800&quality=95&format=auto',
-    mintAddress: '9PR7nCP9DpcUotnDPVLUBUZKu5WAYkwrCUx9wDnSpump',
-    pairAddress: 'Ban...pair',
-    defaultBuyUsd: 260,
-    defaultBuySol: 1.85,
-    defaultProfitUsd: 112000,
-    defaultProfitSol: 800,
-    multiplier: 43.0,
-    snipeSpeed: 'Sotheby Tape Snipe',
-    rankBadge: '#24 ART APEX',
-    notes: 'Bought $260 at Sotheby banana stunt. Extracted +$112,000 profit.',
-    dexUrl: 'https://dexscreener.com/solana/9PR7nCP9DpcUotnDPVLUBUZKu5WAYkwrCUx9wDnSpump',
-  },
-]
-
-export function getSvgFallbackLogo(symbol: string): string {
-  let hash = 0
-  for (let i = 0; i < symbol.length; i++) {
-    hash = (hash << 5) - hash + symbol.charCodeAt(i)
-    hash |= 0
+  5% {
+    opacity: 1;
   }
-  const colorSchemes = [
-    { c1: '#da36ff', c2: '#2af2df' },
-    { c1: '#ff007a', c2: '#7928ca' },
-    { c1: '#00f2fe', c2: '#4facfe' },
-    { c1: '#43e97b', c2: '#38f9d7' },
-    { c1: '#fa709a', c2: '#fee140' },
-    { c1: '#f83600', c2: '#f9d423' },
-    { c1: '#b224ef', c2: '#7579ff' },
-    { c1: '#0ba360', c2: '#3cba92' },
-  ]
-  const scheme = colorSchemes[Math.abs(hash) % colorSchemes.length]
-  const cleanSym = (symbol.slice(0, 3) || 'SOL').toUpperCase()
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
-    <defs>
-      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="${scheme.c1}" />
-        <stop offset="100%" stop-color="${scheme.c2}" />
-      </linearGradient>
-    </defs>
-    <rect width="96" height="96" rx="48" fill="#080c14" />
-    <circle cx="48" cy="48" r="44" fill="url(#g)" fill-opacity="0.25" stroke="url(#g)" stroke-width="2.5" />
-    <text x="48" y="55" font-family="monospace" font-size="24" font-weight="900" fill="#ffffff" text-anchor="middle">${cleanSym}</text>
-  </svg>`
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
-}
-
-export function resolveTokenLogo(
-  symbol?: string,
-  mint?: string,
-  name?: string,
-  liveCoins?: VolumeCoin[]
-): { logo: string; name: string } {
-  if (!symbol) return { logo: getSvgFallbackLogo('SOL'), name: 'Solana Token' }
-  const cleanSym = symbol.trim().toUpperCase()
-
-  // 1. Check live scanned volume coins with actual image
-  if (liveCoins && liveCoins.length > 0) {
-    const liveMatch = liveCoins.find(
-      (c) =>
-        (c.chainId === 'solana' && c.symbol.toUpperCase() === cleanSym && c.imageUrl) ||
-        (mint && c.address.toLowerCase() === mint.toLowerCase() && c.imageUrl)
-    )
-    if (liveMatch?.imageUrl) {
-      return { logo: liveMatch.imageUrl, name: liveMatch.pair || cleanSym }
-    }
+  95% {
+    opacity: 1;
   }
-
-  // 2. Check curated top Solana memecoins catalog
-  const catalogMatch = TOP_SOLANA_MEMECOINS.find(
-    (m) =>
-      m.symbol.toUpperCase() === cleanSym ||
-      (mint && m.mintAddress && m.mintAddress.toLowerCase() === mint.toLowerCase())
-  )
-  if (catalogMatch) {
-    return { logo: catalogMatch.logo, name: catalogMatch.name }
-  }
-
-  // 3. Fallback to unique SVG gradient avatar deterministic to this symbol
-  return {
-    logo: getSvgFallbackLogo(cleanSym),
-    name: name || `${cleanSym} Token`,
+  100% {
+    transform: translateY(105vh);
+    opacity: 0;
   }
 }
 
-const DEFAULT_PROJECTS: TopProject[] = TOP_SOLANA_MEMECOINS.slice(0, 12).map((coin) => ({
-  chainId: 'solana',
-  symbol: coin.symbol,
-  name: coin.name,
-  address: coin.mintAddress || 'So11111111111111111111111111111111111111112',
-  pairAddress: coin.pairAddress || '4AZRPNEfCJ7iw28rJu5aUyeQhYcvdcNm8cswyL51AY9i',
-  priceUsd: coin.defaultBuyUsd / (coin.defaultBuySol * 140 * 10),
-  change24h: parseFloat((Math.random() * 25 - 8).toFixed(1)),
-  volume24h: Math.round(coin.defaultProfitUsd * 2.8),
-  liquidity: Math.round(coin.defaultProfitUsd * 4.2),
-  imageUrl: coin.logo,
-  lowEntryPrice: coin.defaultBuyUsd / (coin.defaultBuySol * 140 * 1000),
-  highExitPrice: coin.defaultBuyUsd / (coin.defaultBuySol * 140 * 10),
-  maxMultiplier: `+${coin.multiplier}x`,
-  firstSeen: coin.snipeSpeed,
-  dexUrl: coin.dexUrl,
-}))
-
-// Dune Analytics Verified Solana Smart Money Wallets (Spread across ALL Top Solana Memecoins)
-const DUNE_VERIFIED_TRADERS: TopTraderRecord[] = TOP_SOLANA_MEMECOINS.map((coin, index) => {
-  const wallets = [
-    { short: '8vT2...9mP1', full: '8vT2kP9mQ1sRt4VxZbN7yW3uJmF5eD2cA8pL' },
-    { short: '4xPw...7kQ9', full: '4xPwVn8tKmQ2zY6aBbC4xR1dE9fU3wJ5sN8m' },
-    { short: '3qR7...5eF0', full: '3qR7vC9mL2kP5wX8sA4yN1uE6dB7jH3fG9tK' },
-    { short: '6tYb...1wK8', full: '6tYbF2sD8hN4pK1vM9qA5zC3wX7eR6uL4jT9' },
-    { short: '9Lz8...2mR4', full: '9Lz8vB4cN1pQ7wK3sX9yT2uM5eA6dF8hG4jK' },
-    { short: '7mK3...8qW2', full: '7mK3sN9pT2wL4xY8vB6aC1dE5fG7hJ3kM9qP' },
-    { short: '5jH2...3rV9', full: '5jH2vN8pL1wM4xY7tB3aC9dE2fG5hJ8kM1qP' },
-    { short: '2bX9...8kN4', full: '2bX9mQ4tL7wP1sY8vN3aC6dE9fG2hJ5kM8qP' },
-    { short: '4wM7...9pL1', full: '4wM7vN2pT8wL3xY9tB1aC5dE7fG9hJ2kM4qP' },
-    { short: '8kP3...2tY5', full: '8kP3sN9pT1wL6xY4vB8aC2dE4fG6hJ9kM3qP' },
-    { short: '1dF9...7vW3', full: '1dF9vN3pT5wL8xY2tB9aC7dE1fG3hJ6kM9qP' },
-    { short: '9rB4...5mK8', full: '9rB4sN6pT2wL9xY5vB1aC4dE8fG1hJ4kM7qP' },
-    { short: '3mQ8...1pA4', full: '3mQ8vN4pT7wL1xY6tB2aC8dE3fG7hJ1kM5qP' },
-    { short: '7eD2...9jN6', full: '7eD2sN8pT3wL5xY7vB4aC1dE6fG9hJ3kM2qP' },
-    { short: '5wT1...4kL9', full: '5wT1vN9pT4wL2xY8tB6aC3dE9fG4hJ7kM1qP' },
-    { short: '2yK6...8mR3', full: '2yK6sN1pT6wL4xY9vB7aC5dE2fG8hJ2kM6qP' },
-    { short: '4pF8...3wQ2', full: '4pF8vN7pT9wL3xY1tB5aC9dE4fG2hJ5kM8qP' },
-    { short: '6hJ3...7tB9', full: '6hJ3sN2pT1wL7xY3vB9aC4dE7fG5hJ9kM4qP' },
-    { short: '8vL5...2kM1', full: '8vL5vN6pT8wL2xY5tB1aC6dE3fG9hJ1kM7qP' },
-    { short: '1tY9...5pW4', full: '1tY9sN4pT3wL6xY8vB2aC8dE5fG3hJ7kM2qP' },
-    { short: '9cF2...6rD8', full: '9cF2vN8pT5wL1xY4tB3aC1dE9fG6hJ4kM9qP' },
-    { short: '3kB7...9mQ5', full: '3kB7sN3pT9wL8xY2vB7aC2dE4fG1hJ8kM3qP' },
-    { short: '7wN4...1jL6', full: '7wN4vN5pT2wL3xY9tB8aC7dE1fG4hJ2kM5qP' },
-    { short: '5pD9...8tB2', full: '5pD9sN7pT4wL5xY1vB6aC9dE8fG7hJ6kM1qP' },
-  ]
-  const wallet = wallets[index % wallets.length]
-  const timeLabels = ['Just now', '2m ago', '5m ago', '8m ago', '12m ago', '17m ago', '24m ago', '31m ago', '42m ago', '56m ago']
-  return {
-    id: `dune-${index + 1}`,
-    wallet: wallet.short,
-    fullWallet: wallet.full,
-    source: 'dune' as const,
-    sourceLabel: 'Dune Smart Money',
-    rankBadge: coin.rankBadge,
-    tokenSymbol: coin.symbol,
-    tokenName: coin.name,
-    tokenLogo: coin.logo,
-    buyPrice: coin.defaultBuyUsd / (coin.defaultBuySol * 140 * 1000),
-    currentPrice: (coin.defaultBuyUsd / (coin.defaultBuySol * 140 * 1000)) * coin.multiplier,
-    buyUsd: coin.defaultBuyUsd,
-    buySol: coin.defaultBuySol,
-    profitUsd: coin.defaultProfitUsd,
-    profitSol: coin.defaultProfitSol,
-    multiplier: coin.multiplier,
-    timeAgo: timeLabels[index % timeLabels.length],
-    snipeSpeed: coin.snipeSpeed,
-    status: index === 0 ? ('holding' as const) : ('realized' as const),
-    txSignature: `${Math.random().toString(36).substring(2, 6)}...${Math.random().toString(36).substring(2, 6)}`,
-    notes: coin.notes,
+@keyframes aurora-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
   }
-})
-
-function formatChainName(chainId: string) {
-  const names: Record<string, string> = {
-    solana: 'Solana',
-    ethereum: 'Ethereum',
-    base: 'Base',
-    bsc: 'BNB Chain',
-    arbitrum: 'Arbitrum',
-    optimism: 'Optimism',
-    polygon: 'Polygon',
-    avalanche: 'Avalanche',
-    ton: 'TON',
+  50% {
+    transform: translate(60px, 80px) scale(1.15);
   }
-  return names[chainId.toLowerCase()] ?? chainId.toUpperCase()
+  100% {
+    transform: translate(-40px, 40px) scale(0.95);
+  }
 }
 
-function formatUsd(value: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: value >= 1 ? 2 : 6,
-  }).format(value)
+@keyframes aurora-drift-2 {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-70px, -60px) scale(1.2);
+  }
+  100% {
+    transform: translate(50px, -30px) scale(0.9);
+  }
 }
 
-function formatVolume(value: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    notation: 'compact',
-    maximumFractionDigits: 2,
-  }).format(value)
+/* Ensure sections layer above background */
+main, .site-header, .top-radar-ticker, .site-footer {
+  position: relative;
+  z-index: 1;
 }
 
-function formatPriceNumber(val: number): string {
-  if (val >= 1000) return val.toLocaleString('en-US', { maximumFractionDigits: 2 })
-  if (val >= 1) return val.toFixed(2)
-  if (val >= 0.01) return val.toFixed(4)
-  if (val >= 0.0001) return val.toFixed(6)
-  return val.toFixed(8)
+/* ================= TOP RADAR TICKER ================= */
+.top-radar-ticker {
+  background: linear-gradient(90deg, #070b16, #101d36, #070b16);
+  border-bottom: 1px solid rgba(76, 137, 255, 0.24);
+  padding: 8px max(4vw, 20px);
+  position: relative;
+  z-index: 10;
+  font-size: 11px;
 }
 
-function App() {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [resourcePage, setResourcePage] = useState<'About' | 'Support' | 'Documentation' | 'Terms and Conditions' | null>(null)
-  const [cookieNoticeVisible, setCookieNoticeVisible] = useState(() => {
-    try {
-      return window.localStorage.getItem('turbo-snipe-cookie-consent') !== 'accepted'
-    } catch {
-      return true
-    }
-  })
-  const [solPrice, setSolPrice] = useState<number | null>(null)
-  const [priceStatus, setPriceStatus] = useState<'connecting' | 'live' | 'delayed'>('connecting')
-  const [topVolumeCoins, setTopVolumeCoins] = useState<VolumeCoin[]>([])
-  const [volumeStatus, setVolumeStatus] = useState<'loading' | 'live' | 'error'>('loading')
-  const [volumeRefreshKey, setVolumeRefreshKey] = useState(0)
+.radar-ticker-content {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
 
-  // Top Projects & Realtime Chart State
-  const [topProjects, setTopProjects] = useState<TopProject[]>(DEFAULT_PROJECTS)
-  const [selectedProject, setSelectedProject] = useState<TopProject>(DEFAULT_PROJECTS[0])
-  const [projectFeedStatus, setProjectFeedStatus] = useState<'connecting' | 'updating' | 'live' | 'delayed'>('connecting')
-  const [flashingProjectIds, setFlashingProjectIds] = useState<string[]>([])
-  const [flashingCoinIds, setFlashingCoinIds] = useState<string[]>([])
-  const previousProjectsRef = useRef<TopProject[]>([])
-  const previousCoinsRef = useRef<VolumeCoin[]>([])
-  const projectFlashTimer = useRef<number | undefined>(undefined)
-  const volumeFlashTimer = useRef<number | undefined>(undefined)
-  const [chartMode, setChartMode] = useState<'embed' | 'radar'>('embed')
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+.radar-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  background: rgba(76, 137, 255, 0.1);
+  border: 1px solid rgba(76, 137, 255, 0.34);
+  border-radius: 4px;
+}
 
-  // Dune Analytics & PumpPortal Top Traders State
-  const [tradersFilter, setTradersFilter] = useState<'all' | 'dune' | 'pumpportal' | 'low-buy'>('all')
-  const [topTraders, setTopTraders] = useState<TopTraderRecord[]>(DUNE_VERIFIED_TRADERS)
-  const [selectedTraderModal, setSelectedTraderModal] = useState<TopTraderRecord | null>(null)
-  const [copiedWallet, setCopiedWallet] = useState<string | null>(null)
-  const [totalProfitTracked, setTotalProfitTracked] = useState<number>(2312000)
-  const [pumpPortalConnected, setPumpPortalConnected] = useState<boolean>(false)
-  const [latestSnipeFlash, setLatestSnipeFlash] = useState<string>('⚡ Dune Smart Money: 8vT2...9mP1 bought $350 of $PNUT ➔ Made +$422,500 (+124.4x)')
-  const [withdrawalVisible, setWithdrawalVisible] = useState(false)
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  animation: pulse-glow 1.5s infinite;
+}
 
-  const refreshMarkets = () => {
-    setVolumeRefreshKey((key) => key + 1)
-    setProjectFeedStatus('updating')
+.ticker-text {
+  font-family: var(--font-mono);
+  color: #e5e9f0;
+  font-size: 11px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 260px;
+}
 
-    // Refresh and spread Dune smart money list across top Solana memecoins
-    const shuffled = [...TOP_SOLANA_MEMECOINS].sort(() => Math.random() - 0.5)
-    const refreshedTraders: TopTraderRecord[] = shuffled.slice(0, 18).map((coin, index) => {
-      const wallets = [
-        { short: '8vT2...9mP1', full: '8vT2kP9mQ1sRt4VxZbN7yW3uJmF5eD2cA8pL' },
-        { short: '4xPw...7kQ9', full: '4xPwVn8tKmQ2zY6aBbC4xR1dE9fU3wJ5sN8m' },
-        { short: '3qR7...5eF0', full: '3qR7vC9mL2kP5wX8sA4yN1uE6dB7jH3fG9tK' },
-        { short: '6tYb...1wK8', full: '6tYbF2sD8hN4pK1vM9qA5zC3wX7eR6uL4jT9' },
-        { short: '9Lz8...2mR4', full: '9Lz8vB4cN1pQ7wK3sX9yT2uM5eA6dF8hG4jK' },
-        { short: '7mK3...8qW2', full: '7mK3sN9pT2wL4xY8vB6aC1dE5fG7hJ3kM9qP' },
-        { short: '5jH2...3rV9', full: '5jH2vN8pL1wM4xY7tB3aC9dE2fG5hJ8kM1qP' },
-        { short: '2bX9...8kN4', full: '2bX9mQ4tL7wP1sY8vN3aC6dE9fG2hJ5kM8qP' },
-        { short: '4wM7...9pL1', full: '4wM7vN2pT8wL3xY9tB1aC5dE7fG9hJ2kM4qP' },
-        { short: '8kP3...2tY5', full: '8kP3sN9pT1wL6xY4vB8aC2dE4fG6hJ9kM3qP' },
-        { short: '1dF9...7vW3', full: '1dF9vN3pT5wL8xY2tB9aC7dE1fG3hJ6kM9qP' },
-        { short: '9rB4...5mK8', full: '9rB4sN6pT2wL9xY5vB1aC4dE8fG1hJ4kM7qP' },
-      ]
-      const wallet = wallets[index % wallets.length]
-      return {
-        id: `dune-refresh-${coin.symbol}-${Date.now()}-${index}`,
-        wallet: wallet.short,
-        fullWallet: wallet.full,
-        source: 'dune' as const,
-        sourceLabel: 'Dune Smart Money',
-        rankBadge: `#${index + 1} ${coin.rankBadge.replace(/^#\d+\s*/, '')}`,
-        tokenSymbol: coin.symbol,
-        tokenName: coin.name,
-        tokenLogo: coin.logo,
-        buyPrice: coin.defaultBuyUsd / (coin.defaultBuySol * (solPrice || 140) * 1000),
-        currentPrice: (coin.defaultBuyUsd / (coin.defaultBuySol * (solPrice || 140) * 1000)) * coin.multiplier,
-        buyUsd: coin.defaultBuyUsd,
-        buySol: coin.defaultBuySol,
-        profitUsd: coin.defaultProfitUsd,
-        profitSol: coin.defaultProfitSol,
-        multiplier: coin.multiplier,
-        timeAgo: `${index * 2 + 1}m ago`,
-        snipeSpeed: coin.snipeSpeed,
-        status: index === 0 ? ('holding' as const) : ('realized' as const),
-        txSignature: `${Math.random().toString(36).substring(2, 6)}...${Math.random().toString(36).substring(2, 6)}`,
-        notes: coin.notes,
-      }
-    })
-    setTopTraders(refreshedTraders)
+.ticker-stat {
+  font-family: var(--font-mono);
+  color: var(--soft);
+  font-size: 11px;
+}
+
+.ticker-stat b {
+  color: var(--magenta);
+}
+
+.ticker-cta {
+  color: #071126;
+  background: var(--cyan);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 3px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.ticker-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px var(--cyan);
+}
+
+/* ================= SITE HEADER ================= */
+.site-header {
+  height: 80px;
+  padding: 0 max(4vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 9, 20, 0.88);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--white);
+  text-decoration: none;
+}
+
+.brand-logo-wrap {
+  width: 44px;
+  height: 44px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #0c1730;
+  border: 1px solid rgba(76, 137, 255, 0.58);
+  box-shadow: 0 0 16px rgba(76, 137, 255, 0.25);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+}
+
+.brand:hover .brand-logo-wrap {
+  transform: scale(1.08) rotate(3deg);
+  box-shadow: 0 0 24px var(--cyan);
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.brand-logo-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(142, 183, 255, 0.48);
+  pointer-events: none;
+  animation: rotate-ring 12s linear infinite;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--white);
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.brand-name span {
+  color: var(--cyan);
+  text-shadow: 0 0 12px rgba(76, 137, 255, 0.42);
+}
+
+.brand-name b {
+  color: var(--magenta);
+  font-size: 11px;
+  text-shadow: 0 0 10px rgba(142, 183, 255, 0.4);
+}
+
+.brand-sub {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  color: #798394;
+  letter-spacing: 1.5px;
+}
+
+.header-sol-price {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  margin-right: 20px;
+  padding: 8px 14px;
+  background: #0d1117;
+  border: 1px solid #222a36;
+  border-radius: 4px;
+}
+
+.header-sol-price .solana-glyph {
+  font-size: 18px;
+  color: var(--cyan);
+}
+
+.header-sol-label {
+  color: #898f99;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.header-sol-price strong {
+  color: var(--white);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 76px;
+}
+
+.feed-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #9ca2ac;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.feed-state i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7b828c;
+}
+
+.feed-state.live i {
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+.feed-state.error i,
+.feed-state.delayed i {
+  background: #e5a354;
+}
+
+.menu-toggle {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #343840;
+  background: #0d0f13;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  border-radius: 4px;
+}
+
+.menu-toggle:hover,
+.menu-toggle[aria-expanded="true"] {
+  border-color: var(--cyan);
+  background: #111a1a;
+}
+
+.menu-toggle span {
+  width: 16px;
+  height: 1.5px;
+  background: var(--white);
+  transition: transform 0.2s;
+}
+
+.menu-toggle[aria-expanded="true"] span:first-child {
+  transform: translateY(3.5px) rotate(45deg);
+}
+
+.menu-toggle[aria-expanded="true"] span:last-child {
+  transform: translateY(-3.5px) rotate(-45deg);
+}
+
+.resource-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: max(4vw, 24px);
+  width: 270px;
+  max-width: calc(100vw - 24px);
+  padding: 16px;
+  background: #0c0e12;
+  border: 1px solid #32353d;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  animation: rise-in 0.2s both;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.menu-caption {
+  display: block;
+  padding: 2px 8px 10px;
+  color: var(--magenta);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.resource-menu button {
+  width: 100%;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 26px 1fr 16px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  text-align: left;
+  color: #d9dce1;
+  border: 0;
+  border-top: 1px solid #24272e;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.resource-menu button:hover {
+  color: var(--cyan);
+  background: #111a1f;
+}
+
+.resource-index {
+  color: #777d87;
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.resource-arrow {
+  justify-self: end;
+  color: var(--magenta);
+}
+
+/* ================= MODALS & OVERLAYS ================= */
+.resource-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 120;
+}
+
+.resource-page {
+  position: relative;
+  width: min(100%, 540px);
+  max-height: min(84vh, 820px);
+  overflow-y: auto;
+  padding: 40px;
+  background: #0c0e12;
+  border: 1px solid #373a43;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.75);
+  animation: rise-in 0.2s both;
+  border-radius: 8px;
+}
+
+.resource-page h1 {
+  margin: 16px 0 14px;
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: 32px;
+  text-transform: uppercase;
+}
+
+.resource-page p {
+  color: #a2a7b0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.resource-page:has(.docs-content),
+.resource-page:has(.terms-content) {
+  width: min(100%, 720px);
+}
+
+.resource-content { margin-top: 8px; }
+.resource-content .resource-lead { color: #dbe5f7; font-size: 14px; line-height: 1.75; }
+.resource-detail-list { display: grid; gap: 0; margin: 24px 0; border-top: 1px solid #25344c; }
+.resource-detail-list > div { display: grid; grid-template-columns: 32px 1fr; gap: 5px 10px; padding: 15px 0; border-bottom: 1px solid #25344c; }
+.resource-detail-list > div > span { grid-row: span 2; color: var(--cyan); font: 10px var(--font-mono); padding-top: 2px; }
+.resource-detail-list strong { color: var(--white); font-size: 12px; }
+.resource-detail-list p { margin: 0; font-size: 11px; }
+.resource-action { display: inline-flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px 15px; color: #071126; background: var(--cyan); text-decoration: none; font-size: 11px; font-weight: 800; }
+.resource-action:hover { filter: brightness(1.1); }
+.resource-note { display: block; margin-top: 12px; color: #8693a6; font: 9px/1.6 var(--font-mono); }
+.docs-content section, .terms-content section { padding: 16px 0; border-top: 1px solid #25344c; }
+.docs-step, .draft-notice { color: var(--cyan); font: 9px var(--font-mono); }
+.docs-content h2, .terms-content h2 { margin: 7px 0 5px; color: var(--white); font: 600 16px var(--font-subheading); text-transform: uppercase; }
+.docs-content section p, .terms-content section p { margin: 0; font-size: 11px; }
+.docs-content strong { color: #eaf1ff; }
+.terms-content { padding-top: 5px; }
+.draft-notice { display: inline-block; padding: 5px 8px; border: 1px solid rgba(91, 145, 255, .35); background: rgba(91, 145, 255, .08); }
+.terms-content .resource-lead { margin: 14px 0 18px; }
+.terms-reveal-block {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px dashed #2e3e5c;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.terms-reveal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  color: var(--cyan);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.terms-reveal-btn:hover {
+  background: var(--cyan);
+  color: #071126;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.35);
+}
+.terms-reveal-content {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px 18px;
+  background: rgba(0, 229, 255, 0.04);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 6px;
+  animation: rise-in 0.25s both;
+  text-align: left;
+}
+.terms-reveal-content h2 {
+  color: var(--cyan) !important;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.terms-reveal-content p {
+  color: #e2e8f0 !important;
+  font-size: 12px !important;
+  line-height: 1.7 !important;
+}
+
+@media (max-width: 640px) {
+  .resource-page, .resource-page:has(.docs-content), .resource-page:has(.terms-content) {
+    max-height: 88vh;
+    padding: 32px 22px 24px;
+  }
+}
+
+.resource-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-right: 42px;
+}
+
+.resource-back-arrow-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 229, 255, 0.06);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  color: var(--cyan);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.resource-back-arrow-top svg {
+  transition: transform 0.2s ease;
+  color: var(--cyan);
+}
+
+.resource-back-arrow-top:hover {
+  background: var(--cyan);
+  color: #071126;
+  border-color: var(--cyan);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.4);
+}
+
+.resource-back-arrow-top:hover svg {
+  transform: translateX(-3px);
+  color: #071126;
+}
+
+.resource-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  color: #a2a7b0;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resource-close:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0, 229, 255, 0.1);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+}
+
+.resource-footer-row {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #1c2331;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.resource-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  color: var(--cyan);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.resource-back-button svg {
+  transition: transform 0.2s ease;
+  color: var(--cyan);
+}
+
+.resource-back-button:hover {
+  background: var(--cyan);
+  color: #071126;
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.resource-back-button:hover svg {
+  transform: translateX(-4px);
+  color: #071126;
+}
+
+.resource-back-button:active {
+  transform: translateY(0);
+}
+
+
+.trade-inspector-modal {
+  position: relative;
+  width: min(100%, 640px);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 36px;
+  background: #0d1117;
+  border: 1px solid rgba(76, 137, 255, 0.35);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.8), 0 0 40px rgba(76, 137, 255, 0.12);
+  border-radius: 8px;
+  animation: rise-in 0.25s both;
+}
+
+.modal-header {
+  border-bottom: 1px solid #222934;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  color: var(--white);
+  margin: 8px 0 10px;
+}
+
+.modal-rank-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cyan);
+  background: rgba(76, 137, 255, 0.1);
+  padding: 4px 10px;
+  border: 1px solid rgba(76, 137, 255, 0.3);
+  border-radius: 4px;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.modal-stat-box {
+  background: #121822;
+  border: 1px solid #222c3a;
+  padding: 14px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.modal-stat-box.highlight-green {
+  border-color: rgba(0, 255, 136, 0.3);
+  background: rgba(0, 255, 136, 0.04);
+}
+
+.modal-stat-box.highlight-cyan {
+  border-color: rgba(76, 137, 255, 0.3);
+  background: rgba(76, 137, 255, 0.04);
+}
+
+.modal-stat-box.total-pnl-box {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(76, 137, 255, 0.08), rgba(142, 183, 255, 0.08));
+  border-color: rgba(76, 137, 255, 0.4);
+  padding: 18px;
+}
+
+.modal-stat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #8b94a0;
+  text-transform: uppercase;
+}
+
+.modal-stat-box strong {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--white);
+}
+
+.modal-stat-box small {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #7d8794;
+}
+
+.profit-huge {
+  font-size: 28px !important;
+  color: var(--green) !important;
+  text-shadow: 0 0 18px var(--green-glow);
+}
+
+.sol-huge {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.modal-wallet-copy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.modal-wallet-copy code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--cyan);
+}
+
+.copy-btn,
+.solscan-link {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 7px;
+  border-radius: 3px;
+  background: #1b2432;
+  border: 1px solid #303c4f;
+  color: #c9d2de;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.copy-btn:hover,
+.solscan-link:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.modal-token-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-token-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(76, 137, 255, 0.4);
+}
+
+.modal-notes {
+  font-size: 12px;
+  color: #a0a8b4;
+  background: #090c10;
+  padding: 12px;
+  border-left: 3px solid var(--magenta);
+  border-radius: 0 4px 4px 0;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.modal-cta-row {
+  margin-top: 10px;
+}
+
+.button-primary.full-width {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ================= HERO SECTION ================= */
+.hero-section {
+  min-height: 700px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 80px max(4vw, 24px) 60px;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(480px, 1.15fr);
+  align-items: center;
+  gap: 40px;
+  position: relative;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  top: -180px;
+  left: -150px;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(16, 94, 112, 0.18), transparent 70%);
+}
+
+.hero-copy {
+  z-index: 1;
+  animation: rise-in 0.75s both;
+}
+
+.eyebrow,
+.approach-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #a2a7b0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 12px var(--cyan);
+  flex: 0 0 auto;
+}
+
+.eyebrow-line {
+  width: 38px;
+  height: 1px;
+  background: var(--magenta);
+  margin-left: 4px;
+}
+
+.hero-copy h1 {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 5.2vw, 76px);
+  font-weight: 800;
+  line-height: 1.02;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  color: var(--white);
+  margin: 22px 0 18px;
+}
+
+.hero-copy h1 span {
+  color: var(--cyan);
+  text-shadow: 0 0 30px rgba(76, 137, 255, 0.3);
+}
+
+.hero-description {
+  max-width: 440px;
+  color: #989da7;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.button-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: #031211;
+  background: var(--cyan);
+  text-decoration: none;
+  padding: 14px 22px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.button-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(76, 137, 255, 0.35);
+}
+
+.text-link {
+  color: #c4c7cd;
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+.text-link:hover {
+  color: var(--cyan);
+}
+
+.text-link span {
+  color: var(--magenta);
+  margin-left: 6px;
+}
+
+.hero-footnote {
+  margin-top: 60px;
+  color: #717680;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.footnote-cross {
+  color: var(--magenta);
+  font-size: 16px;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+.footnote-separator {
+  padding: 0 8px;
+  color: var(--cyan);
+}
+
+/* Hero Terminal Box */
+.terminal-wrap {
+  position: relative;
+  max-width: 580px;
+  width: 100%;
+  justify-self: end;
+  animation: rise-in 0.85s 0.1s both;
+}
+
+.terminal-glow {
+  position: absolute;
+  inset: -15% -8%;
+  background: radial-gradient(ellipse, rgba(76, 137, 255, 0.14), transparent 66%);
+  filter: blur(25px);
+  pointer-events: none;
+}
+
+.terminal-card {
+  position: relative;
+  background: #0f1620;
+  border: 1px solid #233140;
+  border-radius: 8px;
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.6), 0 0 45px rgba(76, 137, 255, 0.06);
+  overflow: hidden;
+}
+
+.terminal-topbar {
+  height: 40px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #233140;
+  background: #0b1017;
+}
+
+.window-dots {
+  display: flex;
+  gap: 5px;
+  width: 65px;
+}
+
+.window-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #454951;
+}
+
+.window-dots i:first-child {
+  background: var(--cyan);
+}
+
+.window-dots i:nth-child(2) {
+  background: var(--magenta);
+}
+
+.terminal-title,
+.live-indicator,
+.micro-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #7e838d;
+}
+
+.terminal-title {
+  color: #d1d8e0;
+}
+
+.terminal-title span {
+  color: var(--cyan);
+  padding: 0 4px;
+}
+
+.live-indicator {
+  width: 75px;
+  text-align: right;
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+.live-indicator i {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--cyan);
+  margin-right: 5px;
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+.bot-content {
+  padding: 18px 20px 16px;
+}
+
+.hero-official-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(76, 137, 255, 0.05);
+  border: 1px solid rgba(76, 137, 255, 0.25);
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
+.hero-badge-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid var(--cyan);
+  box-shadow: 0 0 12px rgba(76, 137, 255, 0.35);
+}
+
+.hero-badge-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hero-badge-meta strong {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--white);
+  letter-spacing: 0.5px;
+}
+
+.hero-badge-meta span {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--cyan);
+  letter-spacing: 0.8px;
+}
+
+.bot-info-block {
+  padding: 0 0 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #1c2734;
+}
+
+.bot-block-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #e9edf0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.bot-block-title > span {
+  color: var(--cyan);
+  font-size: 12px;
+}
+
+.bot-block-title i {
+  height: 1px;
+  background: #233140;
+  flex: 1;
+  margin-left: 4px;
+}
+
+.bot-info-line {
+  min-height: 20px;
+  display: grid;
+  grid-template-columns: 20px 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  color: #c5d0d8;
+  font-family: var(--font-body);
+  font-size: 11px;
+}
+
+.bot-info-line:first-of-type {
+  margin-top: 4px;
+}
+
+.bot-info-icon {
+  color: #8da1af;
+  font-size: 11px;
+  text-align: center;
+}
+
+.bot-info-line strong {
+  color: #f2f5f6;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.bot-info-line .info-muted {
+  color: #798b96;
+  font-weight: 400;
+}
+
+.inline-feed-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #89929b;
+  margin-left: 4px;
+}
+
+.inline-feed-dot.live {
+  background: var(--cyan);
+  box-shadow: 0 0 7px var(--cyan);
+}
+
+.inline-feed-dot.delayed {
+  background: #e5a354;
+}
+
+.bot-quick-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #111a24;
+  border: 1px solid #233242;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+.bot-quick-action > div {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-items: center;
+  gap: 2px 8px;
+}
+
+.quick-bolt {
+  grid-row: span 2;
+  color: var(--magenta);
+  font-size: 20px;
+}
+
+.bot-quick-action strong {
+  color: #f4f6f7;
+  font-family: var(--font-display);
+  font-size: 11px;
+}
+
+.bot-quick-action small {
+  color: #92a0aa;
+  font-size: 9px;
+}
+
+.bot-launch-button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--cyan);
+  color: #061412;
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 4px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.bot-launch-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px var(--cyan);
+}
+
+.bot-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.bot-action-link {
+  min-width: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  color: #edf1f4;
+  background: #16212c;
+  border: 1px solid #283745;
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.bot-action-link:hover {
+  border-color: var(--cyan);
+  background: #1d2c39;
+}
+
+.bot-action-link > span {
+  color: var(--cyan);
+}
+
+.bot-action-link b {
+  margin-left: auto;
+  color: #7e8b95;
+  font-size: 10px;
+}
+
+.bot-disclaimer {
+  padding-top: 10px;
+  color: #7b8893;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.hero-index {
+  position: absolute;
+  bottom: 20px;
+  left: max(4vw, 24px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #747984;
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.hero-index span {
+  color: var(--cyan);
+}
+
+.hero-index i {
+  width: 38px;
+  height: 1px;
+  background: #3d424b;
+}
+
+/* ================= SECTION: TOP TRADERS & DEXSCREENER CHART ================= */
+.top-traders-section {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 80px max(4vw, 24px) 70px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.traders-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 30px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.section-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.traders-section-header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 3.8vw, 48px);
+  font-weight: 800;
+  color: var(--white);
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+
+.traders-section-header h2 span {
+  color: var(--cyan);
+  text-shadow: 0 0 25px rgba(76, 137, 255, 0.35);
+}
+
+.traders-section-header p {
+  color: #9298a2;
+  font-size: 13px;
+  max-width: 600px;
+  margin: 0;
+}
+
+.traders-stats-pills {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  padding: 10px 16px;
+  background: #0d1218;
+  border: 1px solid #222c38;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stat-pill-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #748190;
+  font-weight: 700;
+}
+
+.stat-pill-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.stat-pill-value.cyan {
+  color: var(--cyan);
+}
+
+.stream-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(76, 137, 255, 0.1);
+  border: 1px solid rgba(76, 137, 255, 0.3);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stream-toggle.active .stream-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse-glow 1.2s infinite;
+}
+
+/* Project Selector Strip */
+.project-selector-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.project-tab-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #0c1016;
+  border: 1px solid #222b37;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.project-tab-card:hover {
+  background: #111720;
+  border-color: #334254;
+  transform: translateY(-1px);
+}
+
+.project-tab-card.selected {
+  background: #111b24;
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(76, 137, 255, 0.2);
+}
+
+.project-tab-card.market-flash,
+.volume-row.market-flash {
+  animation: market-refresh-flash 1.8s ease-out;
+}
+
+.project-tab-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(76, 137, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.project-tab-image-wrap { width: 34px; height: 34px; position: relative; display: grid; place-items: center; flex: 0 0 34px; border-radius: 50%; background: #14233d; overflow: hidden; }
+.project-tab-logo-fallback { color: var(--cyan); font: 700 11px var(--font-mono); }
+.project-tab-image-wrap .project-tab-logo { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; background: #101a2a; }
+
+.market-refresh-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  color: var(--cyan);
+  background: #101c32;
+  border: 1px solid #324a70;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background .18s, border-color .18s, color .18s, transform .18s;
+}
+.market-refresh-icon span { font-size: 24px; line-height: 1; }
+.market-refresh-icon:hover { color: #fff; background: #172b4a; border-color: var(--cyan); }
+.market-refresh-icon.is-refreshing span { animation: refresh-spin .8s linear infinite; }
+@keyframes refresh-spin { to { transform: rotate(360deg); } }
+
+.project-tab-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.project-tab-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-tab-sym {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--white);
+}
+
+.project-tab-chg {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.project-tab-chg.pos {
+  color: var(--green);
+}
+
+.project-tab-chg.neg {
+  color: #ff5b6b;
+}
+
+.project-tab-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-tab-price {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #a8b2be;
+}
+
+.project-tab-mult {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--magenta);
+  font-weight: 700;
+}
+
+.project-chain-tag,
+.network-tag,
+.volume-chain-tag {
+  display: inline-flex;
+  align-items: center;
+  color: #a9c5f4;
+  background: rgba(91, 145, 255, .1);
+  border: 1px solid rgba(91, 145, 255, .28);
+  border-radius: 3px;
+  padding: 2px 5px;
+  font: 8px var(--font-mono);
+  white-space: nowrap;
+}
+
+.project-tab-mult { display: none; }
+.network-tag { vertical-align: middle; }
+.volume-chain-tag { margin-right: 5px; }
+
+/* Chart Stage & Viewport */
+.chart-stage-container {
+  background: #0b0f15;
+  border: 1px solid #232e3d;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  margin-bottom: 36px;
+}
+
+.chart-stage-header {
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #222d3b;
+  background: #0e141c;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.stage-project-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stage-token-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--cyan);
+  box-shadow: 0 0 16px rgba(76, 137, 255, 0.3);
+}
+
+.stage-token-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.stage-token-name-row h3 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--white);
+  margin: 0;
+}
+
+.token-symbol-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--cyan);
+  background: rgba(76, 137, 255, 0.1);
+  padding: 2px 7px;
+  border: 1px solid rgba(76, 137, 255, 0.3);
+  border-radius: 3px;
+}
+
+.dexscreener-link-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--soft);
+  text-decoration: none;
+  padding: 2px 8px;
+  background: #17202c;
+  border: 1px solid #2e3d4f;
+  border-radius: 3px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.dexscreener-link-btn:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.stage-submetrics {
+  display: flex;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #8591a0;
+  flex-wrap: wrap;
+}
+
+.stage-submetrics b {
+  color: var(--white);
+}
+
+.green-txt {
+  color: var(--green) !important;
+}
+
+.cyan-txt {
+  color: var(--cyan) !important;
+}
+
+.chart-mode-toggles {
+  display: flex;
+  gap: 8px;
+}
+
+.chart-mode-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px 14px;
+  background: #141d27;
+  border: 1px solid #273646;
+  color: #9aa7b6;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chart-mode-btn:hover {
+  color: var(--white);
+  border-color: #3b4e63;
+}
+
+.chart-mode-btn.active {
+  background: rgba(76, 137, 255, 0.12);
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: 0 0 12px rgba(76, 137, 255, 0.2);
+}
+
+.chart-stage-viewport {
+  position: relative;
+  min-height: 480px;
+  background: #080c10;
+}
+
+.dexscreener-embed-wrapper {
+  position: relative;
+  width: 100%;
+  height: 520px;
+}
+
+.dexscreener-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #06090e;
+}
+
+.embed-corner-hud {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.embed-corner-hud.top-left {
+  top: 10px;
+  left: 10px;
+  border-top: 2px solid var(--cyan);
+  border-left: 2px solid var(--cyan);
+}
+
+.embed-corner-hud.top-right {
+  top: 10px;
+  right: 10px;
+  border-top: 2px solid var(--cyan);
+  border-right: 2px solid var(--cyan);
+}
+
+.embed-corner-hud.bottom-left {
+  bottom: 10px;
+  left: 10px;
+  border-bottom: 2px solid var(--cyan);
+  border-left: 2px solid var(--cyan);
+}
+
+.embed-corner-hud.bottom-right {
+  bottom: 10px;
+  right: 10px;
+  border-bottom: 2px solid var(--cyan);
+  border-right: 2px solid var(--cyan);
+}
+
+/* Sniper Radar Curve SVG View */
+.sniper-radar-curve-container {
+  padding: 30px;
+}
+
+.radar-curve-legend {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.legend-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: #b0bac5;
+}
+
+.legend-tag.buy-point i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ff88;
+  box-shadow: 0 0 8px #00ff88;
+}
+
+.legend-tag.exit-point i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a9c7ff;
+  box-shadow: 0 0 8px #a9c7ff;
+}
+
+.legend-tag.gain-mult i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+.radar-svg-wrapper {
+  background: #090e15;
+  border: 1px solid #1e2937;
+  border-radius: 6px;
+  padding: 24px;
+}
+
+.sniper-pnl-svg {
+  width: 100%;
+  height: 260px;
+  overflow: visible;
+}
+
+.radar-interactive-prompt {
+  margin-top: 18px;
+  padding: 14px 18px;
+  background: #0d141e;
+  border: 1px solid #233142;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.radar-interactive-prompt span {
+  font-size: 12px;
+  color: #9aa6b6;
+}
+
+.radar-interactive-prompt b {
+  color: var(--white);
+}
+
+.radar-cta-btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  color: #051311;
+  background: var(--cyan);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.radar-cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px var(--cyan);
+}
+
+/* Realtime Sniper Table Controls */
+.traders-table-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.controls-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.table-caption {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 0.5px;
+}
+
+.filter-pill-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  background: #0e131a;
+  border: 1px solid #232c37;
+  color: #8f9aa6;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-pill:hover {
+  color: var(--white);
+  border-color: #374556;
+}
+
+.filter-pill.active {
+  background: rgba(76, 137, 255, 0.1);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.update-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #798797;
+}
+
+/* Top Traders Table */
+.traders-table-container {
+  border: 1px solid #202b38;
+  background: #0c1016;
+  border-radius: 8px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x pan-y !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cyan) #0c1016;
+  position: relative;
+}
+
+.traders-table-container::-webkit-scrollbar {
+  height: 6px;
+}
+.traders-table-container::-webkit-scrollbar-track {
+  background: #090e16;
+}
+.traders-table-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.45);
+  border-radius: 3px;
+}
+
+.traders-table-head {
+  display: grid;
+  grid-template-columns: 180px 170px 130px 160px 180px 110px 140px 110px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: #0e141c;
+  border-bottom: 1px solid #202b38;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: #798897;
+  letter-spacing: 0.5px;
+  min-width: 1180px !important;
+  width: max-content !important;
+  box-sizing: border-box;
+}
+
+.traders-table-body {
+  min-width: 1180px !important;
+  width: max-content !important;
+  box-sizing: border-box;
+}
+
+.trader-row {
+  display: grid;
+  grid-template-columns: 180px 170px 130px 160px 180px 110px 140px 110px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #1a222c;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  min-width: 1180px !important;
+  width: max-content !important;
+  box-sizing: border-box;
+}
+
+.trader-row:hover {
+  background: #111822;
+}
+
+.trader-row.flash-row {
+  animation: flash-highlight 3s ease-out;
+}
+
+.market-activity-panel { margin-top: 34px; }
+.activity-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 16px; }
+.activity-heading h3 { margin: 5px 0; color: var(--white); font: 600 22px var(--font-display); text-transform: uppercase; }
+.activity-heading p { margin: 0; color: #9298a2; font-size: 11px; line-height: 1.6; }
+.activity-table-scroll { overflow-x: auto; border: 1px solid #202b38; background: #0c1016; border-radius: 6px; }
+.activity-table { min-width: 860px; }
+.activity-table-head, .activity-row { display: grid; grid-template-columns: minmax(190px, 1.6fr) minmax(100px, .9fr) minmax(95px, .9fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(95px, .85fr) 78px; align-items: center; gap: 12px; padding: 0 16px; }
+.activity-table-head { min-height: 38px; color: #8290a2; background: #101827; border-bottom: 1px solid #26344d; font: 8px var(--font-mono); }
+.activity-table-head span:not(:first-child) { text-align: right; }
+.activity-row { min-height: 52px; color: #dce5f4; border-bottom: 1px solid #1e2a3c; font: 10px var(--font-mono); transition: background .16s; }
+.activity-row:last-child { border-bottom: 0; }
+.activity-row:hover { background: #111b2b; }
+.activity-token { display: grid; grid-template-columns: 22px 27px minmax(0, 1fr); align-items: center; gap: 3px 8px; min-width: 0; }
+.activity-token b { grid-row: span 2; color: #74839a; font-size: 8px; }
+.activity-token-image { grid-column: 2; grid-row: span 2; width: 25px; height: 25px; position: relative; display: grid; place-items: center; border: 1px solid #314b70; border-radius: 50%; background: #14233d; overflow: hidden; }
+.activity-token-image i { color: var(--cyan); font: normal 9px var(--font-mono); }
+.activity-token-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+.activity-token strong { color: var(--white); font-size: 10px; }
+.activity-token strong, .activity-token small { grid-column: 3; min-width: 0; }
+.activity-token small { overflow: hidden; color: #8794a8; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.activity-price, .activity-change, .activity-row > span:nth-child(n+4) { text-align: right; }
+.activity-change.positive { color: var(--green); }
+.activity-change.negative { color: #ff7b89; }
+.activity-txns b { color: var(--green); font-weight: 600; }
+.activity-txns i { margin: 0 5px; color: #64738b; font-style: normal; }
+.activity-row.market-flash { animation: market-refresh-flash 1.8s ease-out; }
+.trader-leaderboard-panel { margin-top: 38px; }
+.trader-leaderboard-panel .activity-table { min-width: 980px; }
+.trader-leaderboard-panel .activity-table-head,
+.trader-leaderboard-panel .activity-row { grid-template-columns: minmax(190px, 1.65fr) minmax(95px, .8fr) minmax(95px, .8fr) minmax(95px, .85fr) minmax(115px, 1fr) minmax(115px, 1fr) 92px; }
+.trader-feed-controls { display: flex; flex-direction: column; align-items: flex-end; gap: 9px; }
+.trader-feed-message { margin: -5px 0 13px; color: #99a8bf; font: 9px/1.6 var(--font-mono); }
+.trader-feed-message.unconfigured { color: #edc77d; }
+.trader-feed-message.error { color: #f08c9a; }
+.trader-activity-row { min-height: 58px; }
+.trader-activity-row .activity-token { grid-template-columns: 22px 27px minmax(0, 1fr); }
+.trader-activity-row .activity-change { font-weight: 700; }
+.trader-tx-links { display: flex; justify-content: flex-end; gap: 5px; }
+.trader-tx-links a { color: var(--cyan); border: 1px solid #345079; padding: 5px 6px; text-decoration: none; font: 8px var(--font-mono); }
+.trader-tx-links a:hover { color: #fff; border-color: var(--cyan); background: #14233d; }
+
+.trader-cell-wallet {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trader-rank-idx {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #6a7684;
+  width: 24px;
+}
+
+.trader-wallet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trader-address-txt {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.trader-badge-tag {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.trader-cell-token {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.token-dex-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(76, 137, 255, 0.4);
+}
+
+.trader-cell-token div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.trader-cell-token strong {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--white);
+}
+
+.trader-cell-token small {
+  font-size: 10px;
+  color: #798696;
+}
+
+.trader-cell-buy,
+.trader-cell-exit,
+.trader-cell-invested {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bought-dollar-val {
+  font-family: var(--font-mono);
+  font-size: 13px !important;
+  font-weight: 800;
+  color: #ffffff !important;
+  letter-spacing: 0.3px;
+}
+
+.bought-sol-val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--soft);
+}
+
+.bought-dollar-modal {
+  font-size: 20px !important;
+  color: #ffffff !important;
+}
+
+.bought-low-tag {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.sold-high-tag {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--magenta);
+}
+
+.trader-cell-buy strong,
+.trader-cell-exit strong,
+.trader-cell-invested strong {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--white);
+}
+
+.trader-cell-buy small,
+.trader-cell-exit small,
+.trader-cell-invested small {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #727e8d;
+}
+
+.trader-cell-profit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profit-usd-text {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--green);
+  text-shadow: 0 0 10px var(--green-glow);
+}
+
+.profit-sol-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--cyan);
+}
+
+.multiplier-pill {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  color: #041210;
+  background: linear-gradient(135deg, var(--cyan), #8af3e7);
+  padding: 4px 8px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(76, 137, 255, 0.3);
+}
+
+.trader-cell-source {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.source-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.source-badge.dune-source {
+  color: #da36ff;
+  background: rgba(218, 54, 255, 0.12);
+  border: 1px solid rgba(218, 54, 255, 0.35);
+}
+
+.source-badge.pump-source {
+  color: var(--cyan);
+  background: rgba(42, 242, 223, 0.12);
+  border: 1px solid rgba(42, 242, 223, 0.35);
+}
+
+.time-ago-sub {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: #727e8d;
+}
+
+.stream-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  color: var(--green);
+}
+
+.copy-snipe-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  background: #141f2b;
+  border: 1px solid rgba(76, 137, 255, 0.4);
+  color: var(--cyan);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.copy-snipe-btn:hover {
+  background: var(--cyan);
+  color: #061311;
+  box-shadow: 0 0 12px var(--cyan);
+}
+
+/* ================= SECTION: TOP VOLUME COINS (WITH DEXSCREENER LOGOS) ================= */
+.volume-section {
+  padding: 80px max(4vw, 24px);
+  max-width: 1440px;
+  margin: 0 auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.volume-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.volume-heading h2 {
+  margin: 10px 0 8px;
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: clamp(32px, 3.8vw, 44px);
+  text-transform: uppercase;
+}
+
+.volume-heading h2 span {
+  color: var(--cyan);
+}
+
+.volume-heading p {
+  color: #9298a2;
+  font-size: 13px;
+  margin: 0;
+}
+
+.volume-source {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.volume-source small {
+  color: #707680;
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.volume-table-wrapper {
+  border: 1px solid #202b38;
+  background: #0c1016;
+  border-radius: 8px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x pan-y !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cyan) #0c1016;
+  position: relative;
+}
+
+.volume-table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+.volume-table-wrapper::-webkit-scrollbar-track {
+  background: #090e16;
+}
+.volume-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.45);
+  border-radius: 3px;
+}
+
+.volume-table {
+  width: 100% !important;
+  min-width: 760px !important;
+  border-collapse: collapse;
+}
+
+.volume-table-head,
+.volume-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) minmax(150px, 1.2fr) minmax(110px, 1fr) minmax(110px, 1fr) minmax(110px, 1fr) 90px;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  min-width: 760px !important;
+  width: max-content !important;
+  box-sizing: border-box;
+}
+
+.volume-table-head {
+  height: 44px;
+  color: #7c828c;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  background: #0e141c;
+  border-bottom: 1px solid #202b38;
+}
+
+.volume-table-head span:nth-child(n+3) {
+  text-align: right;
+}
+
+.volume-row {
+  min-height: 56px;
+  color: #dce0e5;
+  border-bottom: 1px solid #1a222c;
+  transition: background 0.2s;
+}
+
+.volume-row:hover {
+  background: #111822;
+}
+
+.volume-row.market-flash {
+  animation-name: market-refresh-flash;
+}
+
+.volume-token {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.volume-token b {
+  width: 22px;
+  color: #747a84;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.token-avatar-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #131d27;
+  border: 1px solid rgba(76, 137, 255, 0.35);
+  box-shadow: 0 0 8px rgba(76, 137, 255, 0.15);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.coin-dex-logo-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.token-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.volume-token strong {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.volume-pair {
+  color: #9ca2ac;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.volume-price {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #e5ebf2;
+}
+
+.volume-change,
+.volume-total {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.volume-change.positive {
+  color: var(--green);
+}
+
+.volume-change.negative {
+  color: #ff5b6b;
+}
+
+.volume-total {
+  color: #e4e7eb;
+}
+
+.volume-snipe {
+  justify-self: end;
+  padding: 6px 12px;
+  color: var(--cyan);
+  border: 1px solid rgba(76, 137, 255, 0.4);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.volume-snipe:hover {
+  color: #061412;
+  background: var(--cyan);
+  box-shadow: 0 0 12px var(--cyan);
+}
+
+.volume-empty {
+  padding: 36px 16px;
+  color: #979da6;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ================= SIGNAL STRIP ================= */
+.signal-strip {
+  border-block: 1px solid #202b38;
+  min-height: 126px;
+  padding: 30px max(4vw, 24px);
+  display: grid;
+  grid-template-columns: 1.2fr repeat(3, 1fr);
+  align-items: center;
+  gap: 24px;
+  background: #090c10;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.strip-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #d1d3d8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.strip-heading .micro-label {
+  color: var(--magenta);
+  font-weight: 700;
+}
+
+.strip-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.strip-number {
+  align-self: flex-start;
+  color: #676d77;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding-top: 2px;
+}
+
+.strip-symbol {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #283342;
+  color: var(--cyan);
+  font-size: 18px;
+  border-radius: 4px;
+  background: #0d131a;
+}
+
+.strip-item:nth-child(3) .strip-symbol {
+  color: var(--magenta);
+}
+
+.strip-item > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.strip-item strong {
+  color: #e6e8eb;
+  font-family: var(--font-display);
+  font-size: 12px;
+}
+
+.strip-item small {
+  color: #777d86;
+  font-size: 11px;
+}
+
+/* ================= APPROACH SECTION ================= */
+.approach-section {
+  min-height: 360px;
+  padding: 90px max(4vw, 24px) 80px;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid #202b38;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.approach-kicker {
+  color: #9da2ab;
+}
+
+.approach-section h2 {
+  margin: 18px 0 12px;
+  position: relative;
+  z-index: 1;
+  color: var(--white);
+  font-family: var(--font-display);
+  font-size: clamp(36px, 4vw, 54px);
+  text-transform: uppercase;
+}
+
+.approach-section h2 span {
+  color: var(--magenta);
+}
+
+.approach-section p {
+  position: relative;
+  z-index: 1;
+  max-width: 440px;
+  color: #8b909a;
+  font-size: 14px;
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+
+.approach-orbit {
+  position: absolute;
+  border: 1px solid rgba(76, 137, 255, 0.18);
+  border-radius: 50%;
+  transform: rotate(-24deg);
+  right: 6%;
+  top: -150px;
+  width: 540px;
+  height: 540px;
+}
+
+.orbit-two {
+  width: 450px;
+  height: 450px;
+  right: 10%;
+  top: -100px;
+  border-color: rgba(142, 183, 255, 0.2);
+  transform: rotate(29deg);
+}
+
+.orbit-cross {
+  position: absolute;
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 22px;
+}
+
+.cross-one {
+  top: 40px;
+  right: 18%;
+}
+
+.cross-two {
+  bottom: 40px;
+  right: 34%;
+  color: var(--magenta);
+}
+
+/* ================= FOOTER ================= */
+.site-footer {
+  min-height: 80px;
+  padding: 20px max(4vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid #1a222c;
+  background: #080b0f;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.cookie-consent,
+.cookie-banner {
+  position: fixed;
+  z-index: 110;
+  left: 24px;
+  right: 24px;
+  bottom: 20px;
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 18px;
+  background: rgba(9, 17, 33, 0.97);
+  border: 1px solid rgba(91, 145, 255, 0.55);
+  box-shadow: 0 14px 55px rgba(0, 0, 0, 0.62), 0 0 28px rgba(76, 137, 255, 0.12);
+  backdrop-filter: blur(14px);
+  animation: rise-in 0.28s both;
+  border-radius: 6px;
+}
+
+.cookie-consent-copy,
+.cookie-banner-content { min-width: 0; }
+.cookie-consent-kicker,
+.cookie-tag { color: var(--cyan); font: 9px var(--font-mono); font-weight: 700; letter-spacing: 0.5px; }
+.cookie-consent-copy p,
+.cookie-banner-content p { margin: 6px 0 0; color: #c0c9d8; font-size: 11px; line-height: 1.6; }
+.cookie-consent-actions,
+.cookie-banner-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex: 0 0 auto; }
+.cookie-terms-button,
+.cookie-dismiss-button,
+.cookie-accept-button { min-height: 37px; padding: 0 13px; cursor: pointer; font-size: 10px; font-weight: 700; border-radius: 4px; transition: all 0.2s; }
+.cookie-terms-button,
+.cookie-dismiss-button { color: #d4ddef; background: transparent; border: 1px solid #33445f; }
+.cookie-terms-button:hover,
+.cookie-dismiss-button:hover { border-color: var(--cyan); color: var(--white); background: rgba(76, 137, 255, 0.08); }
+.cookie-accept-button { color: #071126; background: var(--cyan); border: 1px solid var(--cyan); }
+.cookie-accept-button:hover { filter: brightness(1.12); box-shadow: 0 0 12px var(--cyan); }
+
+.footer-brand .brand-logo-wrap {
+  width: 36px;
+  height: 36px;
+}
+
+.footer-brand .brand-name {
+  font-size: 13px;
+}
+
+.footer-note,
+.footer-legal {
+  color: #717680;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.footer-legal i {
+  display: inline-block;
+  height: 9px;
+  border-left: 1px solid #454951;
+  margin: 0 10px -1px;
+}
+
+/* ================= ANIMATIONS ================= */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes rotate-ring {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes flash-highlight {
+  0% {
+    background: rgba(0, 255, 136, 0.25);
+    border-color: var(--green);
+  }
+  40% {
+    background: rgba(76, 137, 255, 0.15);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+@keyframes market-refresh-flash {
+  0% { background-color: rgba(76, 137, 255, 0.28); box-shadow: inset 0 0 0 1px rgba(142, 183, 255, 0.55); }
+  100% { background-color: transparent; box-shadow: inset 0 0 0 1px transparent; }
+}
+
+/* ================= RESPONSIVE DESIGN ================= */
+/* Base safety against overflow */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+.site-shell {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Scrollbars for tables */
+.traders-table-container,
+.volume-table {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(76, 137, 255, 0.4) #0c1016;
+}
+
+.traders-table-container::-webkit-scrollbar,
+.volume-table::-webkit-scrollbar {
+  height: 6px;
+}
+
+.traders-table-container::-webkit-scrollbar-track,
+.volume-table::-webkit-scrollbar-track {
+  background: rgba(11, 18, 34, 0.4);
+}
+
+.traders-table-container::-webkit-scrollbar-thumb,
+.volume-table::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+
+/* ================= HERO TRACKED PROFIT TABULAR LEDGER ================= */
+.profit-table-wrap {
+  flex: 1;
+  max-width: 600px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.profit-table-card {
+  background: linear-gradient(180deg, rgba(14, 20, 31, 0.95) 0%, rgba(8, 12, 20, 0.98) 100%);
+  border: 1px solid rgba(76, 137, 255, 0.35);
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(76, 137, 255, 0.15);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.profit-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profit-hero-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: rgba(16, 26, 42, 0.85);
+  border: 1px solid rgba(76, 137, 255, 0.3);
+  border-radius: 6px;
+  gap: 12px;
+}
+
+.metric-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #8c98a8;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--green);
+  text-shadow: 0 0 14px rgba(0, 255, 136, 0.5);
+  letter-spacing: 0.5px;
+}
+
+.metric-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.source-pill {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--cyan);
+  background: rgba(42, 242, 223, 0.12);
+  border: 1px solid rgba(42, 242, 223, 0.35);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+.metric-sub {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: #738092;
+}
+
+.table-scroll-guide {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px;
+  background: rgba(0, 229, 255, 0.06);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  color: var(--cyan);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.table-scroll-guide.compact {
+  margin-bottom: 8px;
+  padding: 5px 10px;
+  font-size: 10px;
+}
+
+.table-scroll-guide .guide-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.table-scroll-guide .guide-arrow {
+  font-size: 13px;
+  font-weight: 900;
+  display: inline-block;
+  animation: guide-nudge 1.5s infinite ease-in-out;
+}
+
+@keyframes guide-nudge {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+.table-scroll-guide .guide-badge {
+  font-size: 9px;
+  padding: 2px 7px;
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  border-radius: 3px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.profit-table-wrapper {
+  border: 1px solid #1c2636;
+  border-radius: 6px;
+  background: #090e16;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x pan-y !important;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cyan) #090e16;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+.profit-table-wrapper::-webkit-scrollbar {
+  height: 5px;
+}
+.profit-table-wrapper::-webkit-scrollbar-track {
+  background: #090e16;
+}
+.profit-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.4);
+  border-radius: 3px;
+}
+
+.profit-table {
+  width: 100% !important;
+  min-width: 550px !important;
+  border-collapse: collapse;
+}
+
+.profit-table-head {
+  display: grid;
+  grid-template-columns: 140px 90px 80px 135px 95px;
+  align-items: center;
+  padding: 8px 12px;
+  background: #0d1522;
+  border-bottom: 1px solid #1c2636;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #79889a;
+  letter-spacing: 0.5px;
+  min-width: 550px !important;
+  width: max-content !important;
+  box-sizing: border-box;
+}
+
+.profit-table-scroll-body {
+  display: flex;
+  flex-direction: column;
+  max-height: 290px;
+  overflow-y: auto !important;
+  overflow-x: visible !important;
+  min-width: 550px !important;
+  width: max-content !important;
+  touch-action: pan-x pan-y !important;
+}
+
+.profit-table-row {
+  display: grid;
+  grid-template-columns: 140px 90px 80px 135px 95px;
+  align-items: center;
+  padding: 9px 12px;
+  border-bottom: 1px solid #141d2a;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  min-width: 550px !important;
+  width: max-content !important;
+  box-sizing: border-box;
+}
+
+.profit-table-row:last-child {
+  border-bottom: none;
+}
+
+.profit-table-row:hover {
+  background: #111b2b;
+}
+
+.profit-table-row.profit-row-flash {
+  animation: flash-highlight 2.5s ease-out;
+}
+
+.profit-token-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profit-cell-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(76, 137, 255, 0.4);
+  flex-shrink: 0;
+}
+
+.profit-cell-fallback {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #152238;
+  color: var(--cyan);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.profit-token-names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profit-token-names strong {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--white);
+  line-height: 1.2;
+}
+
+.profit-token-names small {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: #738092;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 85px;
+}
+
+.profit-entry-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.profit-entry-cell strong {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--white);
+}
+
+.profit-entry-cell small {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: #738092;
+}
+
+.profit-mult-cell {
+  display: flex;
+  align-items: center;
+}
+
+.profit-multiplier-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  color: #031411;
+  background: linear-gradient(135deg, var(--cyan), #8af3e7);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.profit-gain-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.profit-gain-usd {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--green);
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+.profit-gain-sol {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--cyan);
+}
+
+.profit-source-pill {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.profit-source-pill.dune-pill {
+  color: #da36ff;
+  background: rgba(218, 54, 255, 0.12);
+  border: 1px solid rgba(218, 54, 255, 0.35);
+}
+
+.profit-source-pill.pump-pill {
+  color: var(--cyan);
+  background: rgba(42, 242, 223, 0.12);
+  border: 1px solid rgba(42, 242, 223, 0.35);
+}
+
+.profit-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.profit-footer-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: #79889a;
+  padding: 7px 10px;
+  background: rgba(14, 22, 34, 0.6);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profit-footer-stats strong {
+  color: var(--white);
+}
+
+.profit-footer-stats strong.green-txt {
+  color: var(--green);
+}
+
+.profit-footer-cta {
+  display: flex;
+  gap: 10px;
+}
+
+.view-leaderboard-btn {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #8fa0b5;
+  background: #111a28;
+  border: 1px solid #23334d;
+  padding: 8px 10px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.view-leaderboard-btn:hover {
+  color: var(--white);
+  border-color: var(--cyan);
+}
+
+.snipe-now-btn {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #031411;
+  background: var(--cyan);
+  border: 1px solid var(--cyan);
+  padding: 8px 10px;
+  border-radius: 4px;
+  text-decoration: none;
+  box-shadow: 0 0 10px rgba(42, 242, 223, 0.3);
+  transition: all 0.2s;
+}
+
+.snipe-now-btn:hover {
+  background: #4efceb;
+  box-shadow: 0 0 16px rgba(42, 242, 223, 0.6);
+}
+
+/* ================= BOT OVERVIEW SECTION (AT BOTTOM) ================= */
+.bot-overview-section {
+  padding: 80px max(4vw, 24px);
+  max-width: 1440px;
+  margin: 0 auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bot-overview-header {
+  text-align: center;
+  max-width: 680px;
+  margin-bottom: 36px;
+}
+
+.bot-overview-header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.5vw, 42px);
+  color: var(--white);
+  margin: 8px 0 12px;
+  text-transform: uppercase;
+}
+
+.bot-overview-header h2 span {
+  color: var(--cyan);
+}
+
+.bot-overview-header p {
+  color: #949ca8;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.bot-overview-section .bot-wrap {
+  width: 100%;
+  max-width: 760px;
+}
+
+/* TABLET (max-width: 1080px) */
+@media (max-width: 1080px) {
+  .hero-section {
+    grid-template-columns: 1fr;
+    padding-top: 50px;
+    gap: 40px;
+  }
+  .hero-copy {
+    max-width: 680px;
+  }
+  .profit-table-wrap,
+  .terminal-wrap {
+    justify-self: center;
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .signal-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .strip-heading {
+    grid-column: 1 / -1;
+  }
+}
+
+/* MOBILE & SMALL TABLET (max-width: 768px) - FONT SIZE INCREASED BY 2PX */
+@media (max-width: 768px) {
+  /* Increase base font size on mobile by 2px */
+  html, body {
+    font-size: 16px;
   }
 
-  // Interactive Live Cyberpunk Background Effect (Canvas Particles & Snipe Beams)
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    let animationFrameId: number
-    let width = (canvas.width = window.innerWidth)
-    let height = (canvas.height = window.innerHeight)
-
-    const handleResize = () => {
-      if (!canvas) return
-      width = canvas.width = window.innerWidth
-      height = canvas.height = window.innerHeight
-    }
-    window.addEventListener('resize', handleResize)
-
-    const mouse = { x: -1000, y: -1000, radius: 130 }
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.clientX
-      mouse.y = e.clientY
-    }
-    window.addEventListener('mousemove', handleMouseMove)
-
-    // Particles: on-chain nodes
-    const count = Math.min(Math.floor((width * height) / 19000), 65)
-    const particles = Array.from({ length: count }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      radius: Math.random() * 2 + 1,
-      color: Math.random() > 0.4 ? '#2af2df' : '#da36ff',
-      alpha: Math.random() * 0.5 + 0.2,
-      pulse: Math.random() * Math.PI * 2,
-      pulseSpeed: Math.random() * 0.02 + 0.01,
-    }))
-
-    // Fast network snipe laser beams
-    type Beam = {
-      x: number
-      y: number
-      len: number
-      speed: number
-      angle: number
-      color: string
-      life: number
-      maxLife: number
-    }
-    const beams: Beam[] = []
-
-    const spawnBeam = () => {
-      if (beams.length < 3 && Math.random() < 0.04) {
-        beams.push({
-          x: Math.random() * width,
-          y: Math.random() * (height * 0.7),
-          len: Math.random() * 90 + 50,
-          speed: Math.random() * 6 + 4,
-          angle: Math.PI / 4 + (Math.random() - 0.5) * 0.2,
-          color: Math.random() > 0.5 ? '#2af2df' : '#da36ff',
-          life: 0,
-          maxLife: Math.random() * 50 + 35,
-        })
-      }
-    }
-
-    const render = () => {
-      ctx.clearRect(0, 0, width, height)
-
-      // Beams
-      spawnBeam()
-      for (let i = beams.length - 1; i >= 0; i--) {
-        const b = beams[i]
-        b.life++
-        b.x += Math.cos(b.angle) * b.speed
-        b.y += Math.sin(b.angle) * b.speed
-
-        const prog = b.life / b.maxLife
-        const alpha = prog < 0.2 ? prog / 0.2 : 1 - (prog - 0.2) / 0.8
-        if (alpha > 0) {
-          const tailX = b.x - Math.cos(b.angle) * b.len
-          const tailY = b.y - Math.sin(b.angle) * b.len
-          const grad = ctx.createLinearGradient(tailX, tailY, b.x, b.y)
-          grad.addColorStop(0, 'transparent')
-          grad.addColorStop(1, b.color)
-
-          ctx.strokeStyle = grad
-          ctx.globalAlpha = alpha * 0.7
-          ctx.lineWidth = 1.5
-          ctx.beginPath()
-          ctx.moveTo(tailX, tailY)
-          ctx.lineTo(b.x, b.y)
-          ctx.stroke()
-        }
-
-        if (b.life >= b.maxLife || b.x > width || b.y > height) {
-          beams.splice(i, 1)
-        }
-      }
-
-      // Constellation lines
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x
-          const dy = particles[i].y - particles[j].y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 110) {
-            ctx.strokeStyle = particles[i].color
-            ctx.globalAlpha = (1 - dist / 110) * 0.16
-            ctx.lineWidth = 0.8
-            ctx.beginPath()
-            ctx.moveTo(particles[i].x, particles[i].y)
-            ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.stroke()
-          }
-        }
-      }
-
-      // Nodes
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i]
-        p.pulse += p.pulseSpeed
-        p.x += p.vx
-        p.y += p.vy
-
-        const mdx = p.x - mouse.x
-        const mdy = p.y - mouse.y
-        const mdist = Math.sqrt(mdx * mdx + mdy * mdy)
-        if (mdist < mouse.radius && mdist > 0) {
-          const force = (1 - mdist / mouse.radius) * 1.6
-          p.x += (mdx / mdist) * force
-          p.y += (mdy / mdist) * force
-        }
-
-        if (p.x < 0) p.x = width
-        if (p.x > width) p.x = 0
-        if (p.y < 0) p.y = height
-        if (p.y > height) p.y = 0
-
-        const a = p.alpha * (0.7 + Math.sin(p.pulse) * 0.3)
-        ctx.globalAlpha = a
-        ctx.fillStyle = p.color
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
-        ctx.fill()
-      }
-
-      ctx.globalAlpha = 1
-      animationFrameId = requestAnimationFrame(render)
-    }
-
-    animationFrameId = requestAnimationFrame(render)
-
-    return () => {
-      cancelAnimationFrame(animationFrameId)
-      window.removeEventListener('resize', handleResize)
-      window.removeEventListener('mousemove', handleMouseMove)
-    }
-  }, [])
-
-  // Load SOL Price
-  useEffect(() => {
-    let cancelled = false
-    let refreshTimer: number | undefined
-    const loadSolPrice = async () => {
-      try {
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd')
-        if (!response.ok) throw new Error('SOL price request failed')
-        const result = (await response.json()) as SolPriceResponse
-        const price = result.solana?.usd
-        if (price && Number.isFinite(price) && !cancelled) {
-          setSolPrice(price)
-          setPriceStatus('live')
-        }
-      } catch {
-        if (!cancelled) setPriceStatus('delayed')
-      } finally {
-        if (!cancelled) refreshTimer = window.setTimeout(loadSolPrice, 15_000)
-      }
-    }
-
-    void loadSolPrice()
-    return () => {
-      cancelled = true
-      if (refreshTimer) window.clearTimeout(refreshTimer)
-    }
-  }, [])
-
-  // Load Top Volume Coins with DexScreener coin logos
-  useEffect(() => {
-    let cancelled = false
-    let refreshTimer: number | undefined
-
-    const loadTopVolume = async () => {
-      try {
-        const scanTerms = getScanTerms()
-        const results = await Promise.allSettled(
-          scanTerms.map(async (term) => {
-            const response = await fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(term)}`)
-            if (!response.ok) throw new Error('Pair search failed')
-            return response.json() as Promise<DexSearchResponse>
-          })
-        )
-        const successfulResults = results.filter(
-          (result): result is PromiseFulfilledResult<DexSearchResponse> => result.status === 'fulfilled'
-        )
-        if (successfulResults.length === 0) throw new Error('All pair searches failed')
-        const excludedSymbols = new Set(['SOL', 'WSOL', 'USDT', 'USDC', 'USDS', 'USDE', 'USDG', 'DAI', 'FDUSD', 'PYUSD', 'USD1', 'TUSD', 'EURC'])
-        const seenPairs = new Set<string>()
-        const uniqueCoins = new Map<string, VolumeCoin>()
-
-        for (const pair of successfulResults.flatMap((result) => result.value.pairs ?? [])) {
-          const address = pair.baseToken?.address
-          const chainId = pair.chainId?.toLowerCase()
-          const symbol = pair.baseToken?.symbol?.trim().toUpperCase()
-          const poolAddress = pair.pairAddress
-          const volume = pair.volume?.h24 ?? 0
-          const buys24h = pair.txns?.h24?.buys ?? 0
-          const sells24h = pair.txns?.h24?.sells ?? 0
-          const liquidity = pair.liquidity?.usd ?? 0
-          const priceUsd = pair.priceUsd ? parseFloat(pair.priceUsd) : undefined
-          const imageUrl = pair.info?.imageUrl
-
-          if (
-            !chainId || EXCLUDED_CHAINS.has(chainId) ||
-            !address ||
-            !symbol ||
-            !poolAddress ||
-            seenPairs.has(`${chainId}:${poolAddress}`) ||
-            excludedSymbols.has(symbol) ||
-            liquidity < 25_000 ||
-            volume <= 0
-          )
-            continue
-
-          seenPairs.add(`${chainId}:${poolAddress}`)
-          const tokenKey = `${chainId}:${address}`
-          const coin = uniqueCoins.get(tokenKey)
-          if (coin) {
-            coin.volume += volume
-            coin.buys24h += buys24h
-            coin.sells24h += sells24h
-            if (imageUrl && !coin.imageUrl) coin.imageUrl = imageUrl
-            if (liquidity > (coin.liquidity ?? 0)) {
-              coin.pair = pair.baseToken?.name ?? coin.pair
-              coin.change = Number.isFinite(pair.priceChange?.h24) ? pair.priceChange?.h24 ?? null : null
-              coin.liquidity = liquidity
-              if (priceUsd) coin.priceUsd = priceUsd
-              if (imageUrl) coin.imageUrl = imageUrl
-              coin.pairAddress = poolAddress
-            }
-          } else {
-            uniqueCoins.set(tokenKey, {
-              chainId,
-              address,
-              symbol,
-              pair: pair.baseToken?.name ?? symbol,
-              volume,
-              change: Number.isFinite(pair.priceChange?.h24) ? pair.priceChange?.h24 ?? null : null,
-              liquidity,
-              priceUsd,
-              imageUrl,
-              pairAddress: poolAddress,
-              buys24h,
-              sells24h,
-            })
-          }
-        }
-        if (!cancelled) {
-          const nextCoins = [...uniqueCoins.values()].sort((a, b) => b.volume - a.volume).slice(0, 20)
-          const previousByAddress = new Map(previousCoinsRef.current.map((coin) => [`${coin.chainId}:${coin.address}`, coin]))
-          const changedIds = nextCoins
-            .filter((coin) => {
-              const previous = previousByAddress.get(`${coin.chainId}:${coin.address}`)
-              return previous && (
-                previous.priceUsd !== coin.priceUsd ||
-                previous.change !== coin.change ||
-                previous.volume !== coin.volume
-              )
-            })
-            .map((coin) => `${coin.chainId}:${coin.address}`)
-          previousCoinsRef.current = nextCoins
-          setTopVolumeCoins(nextCoins)
-          if (changedIds.length > 0) {
-            setFlashingCoinIds(changedIds)
-            if (volumeFlashTimer.current) window.clearTimeout(volumeFlashTimer.current)
-            volumeFlashTimer.current = window.setTimeout(() => setFlashingCoinIds([]), 1800)
-          }
-          setVolumeStatus('live')
-        }
-      } catch {
-        if (!cancelled) setVolumeStatus('error')
-      } finally {
-        if (!cancelled) refreshTimer = window.setTimeout(loadTopVolume, 45_000)
-      }
-    }
-
-    void loadTopVolume()
-    return () => {
-      cancelled = true
-      if (refreshTimer) window.clearTimeout(refreshTimer)
-    }
-  }, [volumeRefreshKey])
-
-  // PumpPortal Real-Time WebSocket Connection (Streaming Live Solana Snipers)
-  useEffect(() => {
-    let ws: WebSocket | null = null
-    let reconnectTimeout: number | undefined
-    let fallbackInterval: number | undefined
-
-    const connectPumpPortal = () => {
-      try {
-        ws = new WebSocket('wss://pumpportal.fun/api/data')
-
-        ws.onopen = () => {
-          setPumpPortalConnected(true)
-          ws?.send(JSON.stringify({ method: 'subscribeNewToken' }))
-        }
-
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data as string) as {
-              signature?: string
-              mint?: string
-              traderPublicKey?: string
-              name?: string
-              symbol?: string
-              solAmount?: number
-              initialBuy?: number
-            }
-
-            if (data.mint && data.traderPublicKey) {
-              const activeSolPrice = solPrice || 140
-              const rawSol = data.solAmount && data.solAmount > 0 ? data.solAmount : Math.random() * 2.5 + 0.5
-              const buySolVal = parseFloat(rawSol.toFixed(2))
-              const buyUsdVal = Math.round(buySolVal * activeSolPrice)
-
-              // Dynamic multiplier based on early bonding curve entry
-              const multiplierVal = parseFloat((Math.random() * 85 + 25).toFixed(1))
-              const profitUsdVal = Math.round(buyUsdVal * multiplierVal)
-              const profitSolVal = Math.round(buySolVal * multiplierVal)
-              const sym = data.symbol ? data.symbol.toUpperCase() : 'SOL'
-              const shortW = `${data.traderPublicKey.slice(0, 4)}...${data.traderPublicKey.slice(-4)}`
-              const tokenMeta = resolveTokenLogo(sym, data.mint, data.name, topVolumeCoins)
-
-              const liveSnipe: TopTraderRecord = {
-                id: `pumpportal-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-                wallet: shortW,
-                fullWallet: data.traderPublicKey,
-                source: 'pumpportal',
-                sourceLabel: 'PumpPortal Live',
-                rankBadge: '⚡ PUMPPORTAL SNIPE',
-                tokenSymbol: sym,
-                tokenName: tokenMeta.name,
-                tokenLogo: tokenMeta.logo,
-                buyPrice: 0.000028,
-                currentPrice: parseFloat((0.000028 * multiplierVal).toFixed(6)),
-                buyUsd: buyUsdVal,
-                buySol: buySolVal,
-                profitUsd: profitUsdVal,
-                profitSol: profitSolVal,
-                multiplier: multiplierVal,
-                timeAgo: 'Just now',
-                snipeSpeed: 'Block 0 on-chain',
-                status: 'realized',
-                txSignature: data.signature || `${Math.random().toString(36).substring(2, 6)}...`,
-                notes: `Live on-chain snipe captured via PumpPortal WebSocket. Wallet bought $${buyUsdVal} (${buySolVal} SOL) of $${sym} on launch.`,
-                isNew: true,
-              }
-
-              setTopTraders((prev) => [liveSnipe, ...prev.slice(0, 19)])
-              setTotalProfitTracked((prev) => prev + profitUsdVal)
-              setLatestSnipeFlash(`🚨 PUMPPORTAL LIVE: ${shortW} bought $${buyUsdVal} of $${sym} ➔ Made +$${profitUsdVal.toLocaleString()} (+${multiplierVal}x)`)
-            }
-          } catch {
-            // Ignore parse errors on handshake
-          }
-        }
-
-        ws.onerror = () => {
-          setPumpPortalConnected(false)
-        }
-
-        ws.onclose = () => {
-          setPumpPortalConnected(false)
-          reconnectTimeout = window.setTimeout(connectPumpPortal, 6000)
-        }
-      } catch {
-        setPumpPortalConnected(false)
-      }
-    }
-
-    connectPumpPortal()
-
-    // Resilient fallback ticker: pushes a verified simulated snipe across all Solana memecoins
-    fallbackInterval = window.setInterval(() => {
-      const activeSolPrice = solPrice || 140
-      const sampleCoins = TOP_SOLANA_MEMECOINS
-      const coin = sampleCoins[Math.floor(Math.random() * sampleCoins.length)]
-      const buySolVal = parseFloat((Math.random() * 2.8 + 0.8).toFixed(2))
-      const buyUsdVal = Math.round(buySolVal * activeSolPrice)
-      const multVal = parseFloat((Math.random() * 60 + 35).toFixed(1))
-      const profitUsdVal = Math.round(buyUsdVal * multVal)
-      const profitSolVal = Math.round(buySolVal * multVal)
-      const fakeWallet = `${Math.random().toString(36).substring(2, 6).toUpperCase()}...${Math.random().toString(36).substring(2, 6).toUpperCase()}`
-
-      const streamSnipe: TopTraderRecord = {
-        id: `stream-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        wallet: fakeWallet,
-        fullWallet: `${fakeWallet}SolanaWalletVerified`,
-        source: 'pumpportal',
-        sourceLabel: 'PumpPortal Live',
-        rankBadge: '⚡ PUMPPORTAL STREAM',
-        tokenSymbol: coin.symbol,
-        tokenName: coin.name,
-        tokenLogo: coin.logo,
-        buyPrice: 0.000032,
-        currentPrice: parseFloat((0.000032 * multVal).toFixed(6)),
-        buyUsd: buyUsdVal,
-        buySol: buySolVal,
-        profitUsd: profitUsdVal,
-        profitSol: profitSolVal,
-        multiplier: multVal,
-        timeAgo: 'Just now',
-        snipeSpeed: 'Auto-Sniper Trigger',
-        status: 'realized',
-        txSignature: `${Math.random().toString(36).substring(2, 6)}...${Math.random().toString(36).substring(2, 6)}`,
-        notes: `Real-time on-chain trade stream: Bought $${buyUsdVal} (${buySolVal} SOL) of $${coin.symbol} at bottom entry.`,
-        isNew: true,
-      }
-
-      setTopTraders((prev) => [streamSnipe, ...prev.slice(0, 19)])
-      setTotalProfitTracked((prev) => prev + profitUsdVal)
-      setLatestSnipeFlash(`🚨 PUMPPORTAL: ${fakeWallet} bought $${buyUsdVal} of $${coin.symbol} ➔ Made +$${profitUsdVal.toLocaleString()} (+${multVal}x)`)
-    }, 8500)
-
-    return () => {
-      if (ws) ws.close()
-      if (reconnectTimeout) window.clearTimeout(reconnectTimeout)
-      if (fallbackInterval) window.clearInterval(fallbackInterval)
-    }
-  }, [solPrice, topVolumeCoins])
-
-  // Synchronize project selector cards with top market coins
-  useEffect(() => {
-    if (topVolumeCoins.length === 0) return
-    const discoveredProjects: TopProject[] = topVolumeCoins
-      .filter((coin) => coin.priceUsd && coin.pairAddress)
-      .slice(0, 18)
-      .map((coin) => ({
-        chainId: coin.chainId,
-        symbol: coin.symbol,
-        name: coin.pair,
-        address: coin.address,
-        pairAddress: coin.pairAddress ?? coin.address,
-        priceUsd: coin.priceUsd ?? 0,
-        change24h: coin.change ?? 0,
-        volume24h: coin.volume,
-        liquidity: coin.liquidity,
-        imageUrl: coin.imageUrl ?? '',
-        lowEntryPrice: coin.priceUsd ? coin.priceUsd * 0.05 : 0.00001,
-        highExitPrice: coin.priceUsd ?? 0,
-        maxMultiplier: '64.2x',
-        firstSeen: 'Live DexScreener market scan',
-        dexUrl: `https://dexscreener.com/${coin.chainId}/${coin.pairAddress}`,
-      }))
-
-    const previousByPair = new Map(previousProjectsRef.current.map((project) => [`${project.chainId}:${project.pairAddress.toLowerCase()}`, project]))
-    const changedIds = discoveredProjects
-      .filter((project) => {
-        const previous = previousByPair.get(`${project.chainId}:${project.pairAddress.toLowerCase()}`)
-        return previous && (
-          previous.priceUsd !== project.priceUsd ||
-          previous.change24h !== project.change24h ||
-          previous.volume24h !== project.volume24h
-        )
-      })
-      .map((project) => `${project.chainId}:${project.pairAddress}`)
-    previousProjectsRef.current = discoveredProjects
-    setTopProjects(discoveredProjects)
-    setSelectedProject((current) => discoveredProjects.find((project) => project.chainId === current.chainId && project.pairAddress === current.pairAddress) ?? discoveredProjects[0])
-    setProjectFeedStatus(volumeStatus === 'live' ? 'live' : volumeStatus === 'error' ? 'delayed' : 'updating')
-    if (changedIds.length > 0) {
-      setFlashingProjectIds(changedIds)
-      if (projectFlashTimer.current) window.clearTimeout(projectFlashTimer.current)
-      projectFlashTimer.current = window.setTimeout(() => setFlashingProjectIds([]), 1800)
-    }
-  }, [topVolumeCoins, volumeStatus])
-
-  useEffect(() => () => {
-    if (projectFlashTimer.current) window.clearTimeout(projectFlashTimer.current)
-    if (volumeFlashTimer.current) window.clearTimeout(volumeFlashTimer.current)
-  }, [])
-
-  // Filtered traders list
-  const filteredTraders = useMemo(() => {
-    if (tradersFilter === 'dune') {
-      return topTraders.filter((t) => t.source === 'dune')
-    }
-    if (tradersFilter === 'pumpportal') {
-      return topTraders.filter((t) => t.source === 'pumpportal')
-    }
-    if (tradersFilter === 'low-buy') {
-      return topTraders.filter((t) => t.buyUsd <= 500 || t.buyPrice < 0.001)
-    }
-    return topTraders
-  }, [topTraders, tradersFilter])
-
-  const copyToClipboard = (text: string) => {
-    void navigator.clipboard.writeText(text)
-    setCopiedWallet(text)
-    setTimeout(() => setCopiedWallet(null), 2000)
+  /* Site Header at Top */
+  .site-header {
+    height: 64px;
+    padding: 0 14px;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow: visible;
+  }
+  .brand {
+    gap: 8px;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .brand-logo-wrap {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+  .brand-name {
+    font-size: 14px; /* was 13px (+2px) */
+  }
+  .brand-sub {
+    display: none;
+  }
+  .header-sol-price {
+    padding: 5px 8px;
+    margin-left: auto;
+    margin-right: 8px;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  .header-sol-label {
+    display: none;
+  }
+  .solana-glyph {
+    font-size: 16px;
+  }
+  .header-sol-price strong {
+    font-size: 12px;
+    min-width: auto;
+  }
+  .feed-state {
+    font-size: 9.5px;
+  }
+  .menu-toggle {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    margin-left: 0;
+  }
+  .resource-menu {
+    top: calc(100% + 6px);
+    right: 12px;
+    left: auto;
+    width: 250px;
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+    z-index: 1000;
   }
 
-  return (
-    <div className="site-shell">
-      {/* Live Cyberpunk Background (Canvas, Laser Sweeper, Cyber Grid & Ambient Auroras) */}
-      <div className="live-cyber-background" aria-hidden="true">
-        <canvas ref={canvasRef} className="cyber-canvas" />
-        <div className="cyber-grid-overlay" />
-        <div className="radar-sweep-beam" />
-        <div className="cyber-ambient-aurora aurora-1" />
-        <div className="cyber-ambient-aurora aurora-2" />
-        <div className="cyber-ambient-aurora aurora-3" />
-        <div className="cyber-scanlines" />
-      </div>
-
-      {/* Main Header (At the Top) */}
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="Turbo Sniper Pro home">
-          <div className="brand-logo-wrap">
-            <img src="/logo.png" alt="Turbo Sniper Pro" className="brand-logo-img" />
-            <span className="brand-logo-ring"></span>
-          </div>
-          <div className="brand-text">
-            <span className="brand-name">
-              TURBO<span>SNIPER</span><b>PRO</b>
-            </span>
-            <span className="brand-sub">SNIP • TRADE • PROFIT</span>
-          </div>
-        </a>
-
-        <div className="header-sol-price" aria-live="polite">
-          <span className="solana-glyph">≋</span>
-          <span className="header-sol-label">SOL / USD</span>
-          <strong>{solPrice === null ? 'Connecting…' : formatUsd(solPrice)}</strong>
-          <span className={`feed-state ${priceStatus}`}>
-            <i></i>
-            {priceStatus === 'live' ? 'LIVE' : priceStatus === 'delayed' ? 'DELAYED' : 'CONNECTING'}
-          </span>
-        </div>
-
-        <button
-          className="menu-toggle"
-          type="button"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-          aria-haspopup="menu"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <span></span>
-          <span></span>
-        </button>
-
-        {menuOpen && (
-          <nav className="resource-menu" aria-label="Site menu" role="menu">
-            <span className="menu-caption">RESOURCES</span>
-            {(['About', 'Support', 'Documentation', 'Terms and Conditions'] as const).map((page, index) => (
-              <button
-                key={page}
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setResourcePage(page)
-                  setMenuOpen(false)
-                }}
-              >
-                <span className="resource-index">0{index + 1}</span>
-                {page}
-                <span className="resource-arrow">↗</span>
-              </button>
-            ))}
-          </nav>
-        )}
-      </header>
-
-
-      {cookieNoticeVisible && (
-        <aside className="cookie-banner" aria-label="Cookie notice">
-          <div className="cookie-banner-content">
-            <span className="cookie-tag">PRIVACY NOTE</span>
-            <p>We use essential cookies to keep this site working and to understand how people use it. You can review our policies anytime in Resources.</p>
-            <div className="cookie-banner-actions">
-              <button
-                className="cookie-accept-button"
-                type="button"
-                onClick={() => {
-                  try {
-                    window.localStorage.setItem('turbo-snipe-cookie-consent', 'accepted')
-                  } catch {
-                    // Ignore localStorage errors
-                  }
-                  setCookieNoticeVisible(false)
-                }}
-              >
-                Accept and continue
-              </button>
-              <button className="cookie-dismiss-button" type="button" onClick={() => setCookieNoticeVisible(false)}>
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </aside>
-      )}
-
-      {/* Resource Modal */}
-      {resourcePage && (
-        <div className="resource-overlay" role="presentation" onClick={() => setResourcePage(null)}>
-          <section
-            className="resource-page"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="resource-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button className="resource-close" type="button" aria-label="Close page" onClick={() => setResourcePage(null)}>
-              ×
-            </button>
-            <div className="resource-top-bar">
-              <button className="resource-back-arrow-top" type="button" onClick={() => setResourcePage(null)} aria-label="Back to home">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <line x1="19" y1="12" x2="5" y2="12"></line>
-                  <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                <span>Back</span>
-              </button>
-              <span className="micro-label">TURBO SNIPER PRO / RESOURCES</span>
-            </div>
-            <h1 id="resource-title">{resourcePage}</h1>
-            {resourcePage === 'About' && (
-              <div className="resource-content">
-                <p className="resource-lead">A focused Solana market radar with a direct path into the Turbo Sniper Telegram bot.</p>
-                <div className="resource-detail-list">
-                  <div><span>01</span><strong>Market discovery</strong><p>Browse changing Solana projects and 24-hour volume snapshots in one place.</p></div>
-                  <div><span>02</span><strong>Bot-first execution</strong><p>Use the Telegram bot for wallet connection and any trading actions it supports.</p></div>
-                  <div><span>03</span><strong>Stay in control</strong><p>Market data is informational. Review token details and risks before deciding to trade.</p></div>
-                </div>
-                <a className="resource-action" href={BOT_LINK} target="_blank" rel="noreferrer">Open Turbo Sniper bot <span aria-hidden="true">↗</span></a>
-              </div>
-            )}
-            {resourcePage === 'Support' && (
-              <div className="resource-content">
-                <p className="resource-lead">Need a hand? Message the support team on Telegram.</p>
-                <p>To open a support request, include a short description of the issue and any relevant public transaction link. Never send your recovery phrase, private key, or password.</p>
-                <a className="resource-action" href="https://t.me/Sniperturboprosupport" target="_blank" rel="noreferrer">Message @Sniperturboprosupport <span aria-hidden="true">↗</span></a>
-                <span className="resource-note">For a ticket, start your message with “Support request” and describe what happened.</span>
-              </div>
-            )}
-            {resourcePage === 'Documentation' && (
-              <div className="resource-content docs-content">
-                <p className="resource-lead">A quick guide to the Turbo Sniper Pro site and Telegram bot.</p>
-                <section><span className="docs-step">01 / GET STARTED</span><h2>Open the bot</h2><p>Select <strong>Start sniping</strong> or any bot action to open Turbo Sniper Pro on Telegram. Follow the bot’s own prompts to connect and configure it. The website does not connect to your wallet.</p></section>
-                <section><span className="docs-step">02 / READ THE RADAR</span><h2>Explore live markets</h2><p>The project cards and volume list refresh from public market data. Values can be delayed, incomplete, or different across pools. A high-volume or flashing row is not a buy recommendation.</p></section>
-                <section><span className="docs-step">03 / USE SNIPE LINKS</span><h2>Continue in Telegram</h2><p>A coin’s Snipe button opens the Telegram bot; it does not submit a trade from this page. Confirm the token, network, amount, and settings in the bot before approving any transaction.</p></section>
-                <section><span className="docs-step">04 / PROTECT YOUR WALLET</span><h2>Keep keys private</h2><p>Never share a seed phrase or private key with support or any website. Only use official links and independently verify token addresses before trading.</p></section>
-              </div>
-            )}
-            {resourcePage === 'Terms and Conditions' && (
-              <div className="resource-content terms-content">
-                <span className="draft-notice">TERMS AND CONDITIONS · LAST UPDATED OCTOBER 2026</span>
-                <p className="resource-lead">Please read these Terms and Conditions ("Terms", "Agreement") carefully before using the Turbo Sniper Pro platform ("Service", "Platform") operated by Turbo Sniper Pro ("us", "we", "our"). Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who access or use the Service. By accessing or using the Service you agree to be bound by these Terms. If you disagree with any part of the Terms, then you may not access the Service.</p>
-
-                <section>
-                  <h2>1. Market Risk, Volatility, and Financial Disclaimer</h2>
-                  <p><strong>1.1 Nature of Digital Assets.</strong> Cryptocurrency, blockchain tokens, memecoins, decentralized finance instruments, and all digital assets traded through or displayed on the Turbo Sniper Pro platform are inherently volatile, speculative, and subject to extreme price fluctuations. Prices may increase or decrease by significant percentages within seconds, minutes, or hours. You acknowledge that the value of any digital asset may drop to zero at any time and without warning. Past performance, historical data, and any examples displayed on this platform — including but not limited to tracked profit figures, multiplier gains, wallet profit/loss statements, and on-chain trade records — are provided solely for informational and educational purposes and do not constitute a guarantee, promise, or prediction of future results.</p>
-                  <p><strong>1.2 No Investment Advice.</strong> Nothing on this website or within the Turbo Sniper Pro Telegram bot constitutes financial advice, investment advice, trading advice, tax advice, legal advice, or any other form of professional advice. You should consult with a qualified financial advisor, tax professional, or legal counsel before making any investment decisions. We do not recommend, endorse, or suggest any particular token, coin, trading strategy, entry point, or exit point. All trading decisions are made solely by you, at your own risk and discretion.</p>
-                  <p><strong>1.3 Market Data Accuracy.</strong> Market data displayed on this platform — including but not limited to token prices, 24-hour trading volumes, percentage changes, liquidity figures, market capitalization estimates, and wallet profit tracking — is sourced from third-party data providers such as DexScreener, CoinGecko, PumpPortal, Dune Analytics, and others. This data may be delayed, inaccurate, incomplete, manipulated, or entirely unavailable at any given time. We make no representations or warranties regarding the accuracy, completeness, timeliness, or reliability of any market data displayed on this platform. You should independently verify all data before making any trading or financial decisions.</p>
-                  <p><strong>1.4 Displayed Examples and Tracked Profits.</strong> The profit figures, multiplier gains, and tracked sniper results displayed on this platform are derived from on-chain data analysis and historical blockchain records. These figures represent historical trades and past performance only. They are displayed for illustrative and educational purposes to demonstrate the types of opportunities that exist in the Solana ecosystem. Under no circumstances should these displayed figures be interpreted as typical results, guaranteed returns, or expected outcomes. Individual results vary widely based on market conditions, timing, liquidity, slippage, network congestion, gas fees, and countless other unpredictable factors.</p>
-                  <p><strong>1.5 Total Loss Risk.</strong> You may lose some or all of your invested capital when trading digital assets. You should never invest more than you can afford to lose entirely. Leveraged positions, low-liquidity tokens, newly launched memecoins, and tokens on bonding curves carry especially elevated risk. Rug pulls, exit scams, smart contract exploits, oracle manipulation, and other malicious activities are common in decentralized finance. We are not responsible for any losses incurred as a result of trading activity facilitated through or inspired by information displayed on this platform.</p>
-                  <p><strong>1.6 Regulatory Risk.</strong> The regulatory landscape for digital assets varies significantly across jurisdictions and is subject to rapid and unpredictable changes. Certain tokens, trading activities, or platform features may be restricted, prohibited, or regulated in your jurisdiction. You are solely responsible for understanding and complying with all applicable laws, regulations, and reporting requirements in your jurisdiction. We do not provide guidance on regulatory compliance and make no representations regarding the legality of any particular trading activity in any jurisdiction.</p>
-                  <p><strong>1.7 Tax Obligations.</strong> You are solely responsible for determining and fulfilling any tax obligations that may arise from your use of this platform or from trading digital assets. This includes but is not limited to income tax, capital gains tax, value-added tax, and any other applicable taxes. We do not provide tax reporting tools, tax calculations, or tax advice of any kind. You should consult with a qualified tax professional regarding your specific tax obligations.</p>
-                </section>
-
-                <section>
-                  <h2>2. User Responsibilities, Security, and Conduct</h2>
-                  <p><strong>2.1 Account Security.</strong> You are entirely responsible for maintaining the security and confidentiality of your cryptocurrency wallets, private keys, seed phrases, recovery phrases, API keys, Telegram account credentials, and any other authentication credentials associated with your use of this platform. You must never share your private keys, seed phrases, or wallet recovery phrases with anyone, including anyone claiming to represent Turbo Sniper Pro support, staff, or development team. We will never ask you for your private keys, seed phrases, or wallet passwords under any circumstances. Any message requesting such information is fraudulent.</p>
-                  <p><strong>2.2 Wallet Verification.</strong> Before executing any transaction — whether through the Turbo Sniper Pro Telegram bot, a connected wallet interface, or any other method — you are responsible for independently verifying: (a) the token contract address; (b) the destination wallet address; (c) the transaction amount; (d) the network and chain being used; (e) applicable gas fees, priority fees, and MEV protection settings; (f) slippage tolerance parameters; and (g) any other material transaction details. Blockchain transactions are irreversible once confirmed. We are not responsible for transactions sent to incorrect addresses, for the wrong amounts, on the wrong network, or with incorrect parameters.</p>
-                  <p><strong>2.3 Phishing and Scam Awareness.</strong> The cryptocurrency ecosystem is rife with phishing attempts, scam tokens, fake airdrops, impersonation schemes, and social engineering attacks. You should exercise extreme caution when interacting with any links, tokens, messages, or websites related to cryptocurrency. Always verify URLs independently, never connect your wallet to unverified websites, and be skeptical of unsolicited messages offering investment opportunities, airdrops, or support assistance. We are not responsible for any losses resulting from phishing, social engineering, or scam interactions.</p>
-                  <p><strong>2.4 Prohibited Conduct.</strong> You agree not to use this platform for any unlawful purpose or in any way that violates these Terms. Prohibited activities include but are not limited to: (a) using the platform for money laundering, terrorist financing, sanctions evasion, or any other financial crime; (b) attempting to manipulate markets, engage in wash trading, spoofing, or front-running through the platform; (c) using automated bots, scripts, or tools to scrape, mirror, or overwhelm the platform's infrastructure without prior written authorization; (d) impersonating other users, wallets, or entities; (e) distributing malware, viruses, or malicious code through or in connection with the platform; (f) attempting to reverse-engineer, decompile, or disassemble any part of the platform's technology; (g) circumventing any security measures, access controls, or rate limits implemented by the platform; (h) using the platform while located in any jurisdiction where such use is prohibited by local law or regulation.</p>
-                  <p><strong>2.5 Age Requirement.</strong> You must be at least eighteen (18) years of age, or the age of majority in your jurisdiction (whichever is higher), to use this platform. By using this platform, you represent and warrant that you meet these age requirements. If we discover or reasonably believe that you are under the applicable age requirement, we reserve the right to immediately terminate your access to the platform.</p>
-                  <p><strong>2.6 Sanctions and Restricted Jurisdictions.</strong> You represent and warrant that you are not: (a) located in, organized in, or a resident of any country or territory subject to comprehensive sanctions by the United States (OFAC), the European Union, the United Kingdom, or the United Nations; (b) named on any sanctions list, including the OFAC Specially Designated Nationals (SDN) list, the EU Consolidated List, or any equivalent sanctions list; (c) owned or controlled, directly or indirectly, by any person or entity described in (a) or (b). You agree not to use the platform if any of these conditions apply to you.</p>
-                  <p><strong>2.7 Device and Network Security.</strong> You are responsible for ensuring the security of the devices and networks you use to access this platform. This includes maintaining up-to-date antivirus software, using secure and private internet connections, enabling two-factor authentication where available, and taking reasonable precautions against unauthorized access to your devices. We are not responsible for losses resulting from compromised devices, insecure networks, or inadequate personal security practices.</p>
-                </section>
-
-                <section>
-                  <h2>3. Third-Party Services, Integrations, and Disclaimers</h2>
-                  <p><strong>3.1 Third-Party Service Providers.</strong> Turbo Sniper Pro integrates with and relies upon numerous third-party services, platforms, protocols, and data providers. These include but are not limited to: Telegram (messaging and bot platform), DexScreener (market data and chart embeds), CoinGecko (price data), PumpPortal (real-time Solana on-chain streaming), Dune Analytics (on-chain analytics and smart money tracking), Solana blockchain (underlying network infrastructure), Raydium and Orca (decentralized exchange protocols), Jupiter (aggregation routing), Jito (MEV protection), Phantom and Solflare (wallet providers), and various other services. Each of these services operates independently under its own terms of service, privacy policy, and availability guarantees. We do not control, operate, endorse, or guarantee the availability, accuracy, or security of any third-party service.</p>
-                  <p><strong>3.2 Telegram Bot.</strong> The Turbo Sniper Pro Telegram bot is hosted on the Telegram platform and operates under Telegram's Terms of Service. We are not responsible for: (a) Telegram service interruptions, outages, or maintenance periods; (b) message delivery delays or failures; (c) changes to Telegram's API, bot policies, or terms of service that may affect bot functionality; (d) account suspensions or bans imposed by Telegram; (e) data handling practices implemented by Telegram. You use the Telegram bot at your own risk and acknowledge that Telegram is a separate service provider with its own terms and conditions.</p>
-                  <p><strong>3.3 DexScreener and Market Data Embeds.</strong> Chart embeds, token pair data, and market information displayed on this platform are sourced from DexScreener and similar data aggregators. This data is provided "as is" without any warranty of accuracy, completeness, or timeliness. Token information displayed through DexScreener embeds — including price, volume, liquidity, and chart patterns — may differ from information available on other platforms or exchanges. We are not responsible for any errors, omissions, or discrepancies in third-party market data.</p>
-                  <p><strong>3.4 Blockchain Networks.</strong> All transactions facilitated through or inspired by the Turbo Sniper Pro platform are executed on public blockchain networks, primarily the Solana blockchain. Blockchain networks are decentralized, permissionless systems that may experience: (a) congestion, slowdowns, or temporary unavailability; (b) network forks, rollbacks, or consensus failures; (c) validator outages or centralization risks; (d) smart contract bugs, exploits, or vulnerabilities; (e) changes to network parameters, fees, or consensus mechanisms; (f) regulatory actions affecting network operation. We have no control over blockchain network operation and are not responsible for any losses or disruptions caused by blockchain network issues.</p>
-                  <p><strong>3.5 Decentralized Exchange Protocols.</strong> Tokens traded through the Turbo Sniper Pro bot may be executed through decentralized exchange (DEX) protocols such as Raydium, Orca, Jupiter, Meteora, and others. These protocols operate through immutable or upgradeable smart contracts deployed on public blockchains. Smart contracts may contain bugs, vulnerabilities, or design flaws that could result in loss of funds. Liquidity pools may be drained, manipulated, or rendered non-functional. Token prices on DEXs may differ significantly from prices on centralized exchanges. Slippage, front-running, sandwich attacks, and MEV extraction are inherent risks of DEX trading. We are not responsible for any losses resulting from DEX protocol issues, smart contract failures, or MEV-related attacks.</p>
-                  <p><strong>3.6 Token Contract Risks.</strong> Tokens displayed on or traded through this platform are created by third-party developers and deployers. We do not audit, verify, endorse, or guarantee the security, legitimacy, or functionality of any token contract. Token contracts may contain: (a) hidden mint functions allowing unlimited token creation; (b) transfer restrictions or honeypot mechanisms preventing selling; (c) backdoor functions allowing the deployer to drain liquidity; (d) malicious code designed to steal funds or private keys; (e) upgradeable proxy contracts that can be modified after deployment; (f) excessive or hidden taxes on buy/sell transactions. You should independently audit and verify token contracts before trading. Tools such as RugCheck, Token Sniffer, and manual contract review should be used to assess token safety.</p>
-                  <p><strong>3.7 Wallet Provider Risks.</strong> The cryptocurrency wallets you use to interact with this platform (including but not limited to Phantom, Solflare, Backpack, and other Solana-compatible wallets) are third-party products. We do not control, audit, or guarantee the security of any wallet provider. Wallet vulnerabilities, browser extension compromises, supply chain attacks, and software bugs may result in loss of funds. You should only use wallets from reputable providers, keep wallet software updated, and follow the wallet provider's security recommendations.</p>
-                  <p><strong>3.8 External Links.</strong> This platform may contain links to external websites, services, or resources. These links are provided for convenience and informational purposes only. We do not control, endorse, or assume responsibility for the content, privacy policies, or practices of any third-party websites or services. You access external links entirely at your own risk.</p>
-                  <p><strong>3.9 Limitation of Liability.</strong> To the maximum extent permitted by applicable law, Turbo Sniper Pro, its operators, developers, affiliates, partners, officers, directors, employees, agents, and licensors shall not be liable for any indirect, incidental, special, consequential, punitive, or exemplary damages, including but not limited to damages for loss of profits, goodwill, data, digital assets, or other intangible losses, arising out of or in connection with: (a) your use or inability to use the platform; (b) any transaction or series of transactions facilitated through the platform; (c) unauthorized access to or alteration of your data, wallets, or accounts; (d) statements or conduct of any third party on or through the platform; (e) any bugs, viruses, or other harmful code transmitted through the platform; (f) any errors, omissions, or inaccuracies in platform content or market data; (g) any interruption, suspension, or termination of the platform or any part thereof; (h) any other matter relating to the platform, whether based on warranty, contract, tort, strict liability, or any other legal theory, and whether or not we have been advised of the possibility of such damages. In no event shall our total aggregate liability exceed one hundred United States dollars ($100.00 USD).</p>
-                  <p><strong>3.10 Indemnification.</strong> You agree to indemnify, defend, and hold harmless Turbo Sniper Pro, its operators, developers, affiliates, partners, officers, directors, employees, agents, and licensors from and against any and all claims, liabilities, damages, losses, costs, expenses, and fees (including reasonable attorneys' fees) arising out of or in connection with: (a) your use of or access to the platform; (b) your violation of these Terms; (c) your violation of any applicable law, rule, or regulation; (d) your violation of any rights of a third party; (e) any content you submit, post, or transmit through the platform.</p>
-                  <p><strong>3.11 Disclaimer of Warranties.</strong> The platform and all content, features, and services provided through the platform are provided on an "as is" and "as available" basis, without any warranties of any kind, either express or implied. To the fullest extent permitted by applicable law, we disclaim all warranties, express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement. We do not warrant that: (a) the platform will be available at all times or at any particular time; (b) the platform will be uninterrupted, secure, or error-free; (c) the results obtained through the platform will be accurate, reliable, or complete; (d) any errors or defects in the platform will be corrected; (e) the platform is free of viruses, malware, or other harmful components.</p>
-                  <p><strong>3.12 Governing Law and Dispute Resolution.</strong> These Terms shall be governed by and construed in accordance with applicable laws, without regard to conflict of law provisions. Any disputes arising out of or relating to these Terms or your use of the platform shall be resolved through binding arbitration in accordance with the rules of a recognized arbitration body. You agree to waive any right to a jury trial and to participate in a class action lawsuit or class-wide arbitration.</p>
-                  <p><strong>3.13 Severability.</strong> If any provision of these Terms is held to be invalid, illegal, or unenforceable for any reason, such provision shall be modified to the minimum extent necessary to make it valid, legal, and enforceable, or if modification is not possible, such provision shall be severed from these Terms, and the remaining provisions shall continue in full force and effect.</p>
-                  <p><strong>3.14 Entire Agreement.</strong> These Terms, together with any policies or guidelines referenced herein, constitute the entire agreement between you and Turbo Sniper Pro regarding your use of the platform and supersede all prior agreements, understandings, representations, and warranties, whether written or oral, regarding the same subject matter.</p>
-                  <p><strong>3.15 Modifications to Terms.</strong> We reserve the right to modify, amend, or update these Terms at any time and at our sole discretion. Changes will be effective immediately upon posting to the platform. Your continued use of the platform after any changes to the Terms constitutes your acceptance of the revised Terms. It is your responsibility to review these Terms periodically for updates. We may, but are not obligated to, notify users of material changes through the platform or through other communication channels.</p>
-                  <p><strong>3.16 Contact Information.</strong> If you have any questions, concerns, or complaints regarding these Terms or the platform, you may contact us through the official Turbo Sniper Pro Telegram channel or through any other contact methods made available on the platform. Response times may vary and are not guaranteed.</p>
-                </section>
-
-                <div className="terms-reveal-block">
-                  <button
-                    type="button"
-                    className="terms-reveal-btn"
-                    onClick={() => setWithdrawalVisible(!withdrawalVisible)}
-                  >
-                    Final
-                  </button>
-                  {withdrawalVisible && (
-                    <section className="terms-reveal-content">
-                      <h2>4. Withdrawal</h2>
-                      <p>Minimum Trade withdrawal is $2000 and above. This benchmark is set as a prove that we are dedicated to making all traders profitable.</p>
-                    </section>
-                  )}
-                </div>
-              </div>
-            )}
-            <div className="resource-footer-row">
-              <button className="resource-back-button" type="button" onClick={() => setResourcePage(null)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <line x1="19" y1="12" x2="5" y2="12"></line>
-                  <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                <span>Back to Home</span>
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {/* Trade Inspector Modal */}
-      {selectedTraderModal && (
-        <div className="resource-overlay" role="presentation" onClick={() => setSelectedTraderModal(null)}>
-          <div
-            className="trade-inspector-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="trade-inspector-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="resource-close"
-              type="button"
-              aria-label="Close modal"
-              onClick={() => setSelectedTraderModal(null)}
-            >
-              ×
-            </button>
-            <div className="modal-header">
-              <span className="micro-label">ON-CHAIN SNIPE VERIFICATION • {selectedTraderModal.sourceLabel.toUpperCase()}</span>
-              <h2 id="trade-inspector-title">
-                {selectedTraderModal.tokenSymbol} Snipe Breakdown
-              </h2>
-              <div className="modal-rank-tag">{selectedTraderModal.rankBadge}</div>
-            </div>
-
-            <div className="modal-grid">
-              <div className="modal-stat-box">
-                <span className="modal-stat-label">Trader Wallet</span>
-                <div className="modal-wallet-copy">
-                  <code>{selectedTraderModal.wallet}</code>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(selectedTraderModal.fullWallet)}
-                    className="copy-btn"
-                  >
-                    {copiedWallet === selectedTraderModal.fullWallet ? 'Copied ✓' : 'Copy'}
-                  </button>
-                  <a
-                    href={`https://solscan.io/account/${selectedTraderModal.fullWallet}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="solscan-link"
-                  >
-                    Solscan ↗
-                  </a>
-                </div>
-              </div>
-
-              <div className="modal-stat-box">
-                <span className="modal-stat-label">Token & Pair</span>
-                <div className="modal-token-display">
-                  <img src={selectedTraderModal.tokenLogo} alt={selectedTraderModal.tokenSymbol} className="modal-token-img" />
-                  <strong>{selectedTraderModal.tokenName} ({selectedTraderModal.tokenSymbol})</strong>
-                </div>
-              </div>
-
-              <div className="modal-stat-box highlight-cyan">
-                <span className="modal-stat-label">Amount Bought In Dollars ($)</span>
-                <strong className="bought-dollar-modal">${selectedTraderModal.buyUsd.toLocaleString()}</strong>
-                <small>Entry Cost: {selectedTraderModal.buySol} SOL @ ${formatPriceNumber(selectedTraderModal.buyPrice)}</small>
-              </div>
-
-              <div className="modal-stat-box highlight-cyan">
-                <span className="modal-stat-label">Exit / Current Price</span>
-                <strong>${formatPriceNumber(selectedTraderModal.currentPrice)}</strong>
-                <small>Multiplier: {selectedTraderModal.multiplier}x (+{Math.round(selectedTraderModal.multiplier * 100)}%)</small>
-              </div>
-
-              <div className="modal-stat-box total-pnl-box">
-                <span className="modal-stat-label">Massive Profit Made ($ & SOL)</span>
-                <strong className="profit-huge">+${selectedTraderModal.profitUsd.toLocaleString()}</strong>
-                <span className="sol-huge">+{selectedTraderModal.profitSol.toLocaleString()} SOL</span>
-              </div>
-
-              <div className="modal-stat-box">
-                <span className="modal-stat-label">Source & Execution Speed</span>
-                <strong>{selectedTraderModal.sourceLabel}</strong>
-                <small>{selectedTraderModal.snipeSpeed}</small>
-              </div>
-            </div>
-
-            {selectedTraderModal.notes && (
-              <p className="modal-notes">{selectedTraderModal.notes}</p>
-            )}
-
-            <div className="modal-cta-row">
-              <a href={BOT_LINK} target="_blank" rel="noreferrer" className="button-primary full-width">
-                Auto-Copy This Trader in Turbo Sniper Bot <span aria-hidden="true">↗</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <main id="top">
-        {/* HERO SECTION */}
-        <section className="hero-section">
-          <div className="hero-copy">
-            <div className="eyebrow">
-              <span className="status-dot"></span> SOLANA SNIPING TERMINAL <span className="eyebrow-line"></span>
-            </div>
-            <h1>
-              Find the move.<br />
-              <span>Snipe</span> with Turbo.
-            </h1>
-            <p className="hero-description">
-              Track top traders who bought at low dollar amounts and made massive profits using Dune Analytics smart money ledgers and the live PumpPortal on-chain stream.
-            </p>
-            <div className="hero-actions">
-              <a className="button-primary" href={BOT_LINK} target="_blank" rel="noreferrer">
-                Start sniping <span aria-hidden="true">↗</span>
-              </a>
-              <a className="text-link" href="#trader-radar">
-                Top traders & chart <span aria-hidden="true">↓</span>
-              </a>
-            </div>
-            <div className="hero-footnote">
-              <span className="footnote-cross">+</span> BUILT FOR SPEED <span className="footnote-separator">/</span> DESIGNED FOR FOCUS
-            </div>
-          </div>
-
-          {/* TRACKED PROFIT TABULAR LEDGER (In Hero Section) */}
-          <div className="terminal-wrap profit-table-wrap" id="tracked-profit">
-            <div className="terminal-glow"></div>
-            <div className="terminal-card profit-table-card">
-              <div className="terminal-topbar">
-                <div className="window-dots">
-                  <i></i>
-                  <i></i>
-                  <i></i>
-                </div>
-                <span className="terminal-title">
-                  ⚡ TRACKED PROFIT <span> / </span> ON-CHAIN RADAR
-                </span>
-                <span className="live-indicator">
-                  <i className="pulse-dot"></i> REAL-TIME
-                </span>
-              </div>
-
-              <div className="profit-card-body">
-                {/* Total Tracked Profit Banner */}
-                <div className="profit-hero-metric">
-                  <div className="metric-left">
-                    <span className="metric-label">TOTAL TRACKED SNIPER PROFIT</span>
-                    <strong className="metric-value">${totalProfitTracked.toLocaleString()}</strong>
-                  </div>
-                  <div className="metric-right">
-                    <span className="source-pill">DUNE & PUMPPORTAL</span>
-                    <span className="metric-sub">Verified On-Chain Ledgers</span>
-                  </div>
-                </div>
-
-                {/* Tabular Form of Tracked Profit */}
-                <div className="profit-scroll-hint">
-                  <span className="hint-icon">⇄</span> Scroll table sideways to view full columns & status
-                </div>
-                <div className="profit-table-wrapper">
-                  <div className="profit-table" role="table" aria-label="Tracked Profit Table">
-                    <div className="profit-table-head" role="row">
-                      <span role="columnheader">TOKEN / PAIR</span>
-                      <span role="columnheader">ENTRY ($)</span>
-                      <span role="columnheader">GAIN</span>
-                      <span role="columnheader">TRACKED PROFIT ($ & SOL)</span>
-                      <span role="columnheader">STATUS</span>
-                    </div>
-
-                    <div className="profit-table-scroll-body">
-                      {topTraders.slice(0, 7).map((item) => (
-                        <div
-                          className={`profit-table-row ${item.isNew ? 'profit-row-flash' : ''}`}
-                          key={item.id}
-                          role="row"
-                          onClick={() => setSelectedTraderModal(item)}
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') setSelectedTraderModal(item)
-                          }}
-                        >
-                          <div className="profit-token-cell" role="cell">
-                            <img
-                              src={item.tokenLogo}
-                              alt={item.tokenSymbol}
-                              className="profit-cell-logo"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none'
-                                const fb = e.currentTarget.nextElementSibling as HTMLElement | null
-                                if (fb) fb.style.display = 'grid'
-                              }}
-                            />
-                            <span className="profit-cell-fallback" style={{ display: 'none' }}>
-                              {item.tokenSymbol.slice(0, 2)}
-                            </span>
-                            <div className="profit-token-names">
-                              <strong>{item.tokenSymbol}</strong>
-                              <small>{item.tokenName}</small>
-                            </div>
-                          </div>
-
-                          <div className="profit-entry-cell" role="cell">
-                            <strong>${item.buyUsd.toLocaleString()}</strong>
-                            <small>{item.buySol} SOL</small>
-                          </div>
-
-                          <div className="profit-mult-cell" role="cell">
-                            <span className="profit-multiplier-badge">+{item.multiplier}x</span>
-                          </div>
-
-                          <div className="profit-gain-cell" role="cell">
-                            <strong className="profit-gain-usd">+${item.profitUsd.toLocaleString()}</strong>
-                            <span className="profit-gain-sol">+{item.profitSol.toLocaleString()} SOL</span>
-                          </div>
-
-                          <div className="profit-status-cell" role="cell">
-                            <span className={`profit-source-pill ${item.source === 'pumpportal' ? 'pump-pill' : 'dune-pill'}`}>
-                              {item.source === 'pumpportal' ? '⚡ LIVE' : '🏆 DUNE'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer summary & actions */}
-                <div className="profit-card-footer">
-                  <div className="profit-footer-stats">
-                    <div><span>TOP MULTIPLIER:</span> <strong>+2,360x</strong></div>
-                    <div><span>AVG REALIZED:</span> <strong>+$284,500</strong></div>
-                    <div><span>WIN RATE:</span> <strong className="green-txt">98.8%</strong></div>
-                  </div>
-                  <div className="profit-footer-cta">
-                    <a href="#trader-radar" className="view-leaderboard-btn">
-                      Full Radar Table ({topTraders.length}) ↓
-                    </a>
-                    <a href="#bot-terminal" className="snipe-now-btn">
-                      Sniper Bot Overview ↓
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="hero-index">
-            <span>01</span><i></i> PRECISION OVER NOISE
-          </div>
-        </section>
-
-        {/* Real-time Whale Ticker Alert (Moved down below Hero section) */}
-        <aside className="top-radar-ticker" aria-label="Real-time on-chain stream">
-          <div className="radar-ticker-content">
-            <span className="radar-badge">
-              <i className="pulse-dot"></i> DUNE & PUMPPORTAL ON-CHAIN RADAR
-            </span>
-            <span className="ticker-text">{latestSnipeFlash}</span>
-            <span className="ticker-stat">
-              <b>TRACKED PROFIT:</b> ${totalProfitTracked.toLocaleString()}
-            </span>
-            <a href={BOT_LINK} target="_blank" rel="noreferrer" className="ticker-cta">
-              SNIPE WITH BOT ↗
-            </a>
-          </div>
-        </aside>
-
-        {/* SECTION: REALTIME TOP PROJECTS, CHARTS & MASSIVE PROFIT TRADERS */}
-        <section className="top-traders-section" id="trader-radar">
-          <div className="traders-section-header">
-            <div>
-              <div className="section-eyebrow">
-                <span className="pulse-dot"></span> DUNE SMART MONEY & PUMPPORTAL STREAM
-              </div>
-              <h2>
-                Top Traders, Dollar Entries & <span>Massive Profits</span>
-              </h2>
-              <p>
-                Showing how much top snipers bought in dollars and the massive profits they extracted on Solana projects, combining Dune Analytics verified smart money with real-time PumpPortal on-chain trades.
-              </p>
-            </div>
-            <div className="traders-stats-pills">
-              <div className="stat-pill">
-                <span className="stat-pill-label">TRACKED SNIPER PROFIT</span>
-                <strong className="stat-pill-value">${totalProfitTracked.toLocaleString()}</strong>
-              </div>
-              <div className="stat-pill">
-                <span className="stat-pill-label">HIGHEST MULTIPLIER</span>
-                <strong className="stat-pill-value cyan">+2,360x</strong>
-              </div>
-              <div className="stat-pill">
-                <span className="stat-pill-label">PUMPPORTAL STREAM</span>
-                <span className="stream-badge active">
-                  <i className="stream-dot"></i> {pumpPortalConnected ? 'STREAMING' : 'ACTIVE'}
-                </span>
-              </div>
-              <button
-                className={`market-refresh-icon ${projectFeedStatus === 'updating' ? 'is-refreshing' : ''}`}
-                type="button"
-                onClick={refreshMarkets}
-                aria-label="Reload market data"
-                title="Reload market data"
-              >
-                <span aria-hidden="true">↻</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Interactive Project Selector Tabs */}
-          <div className="project-selector-strip" role="tablist" aria-label="Top Projects">
-            {topProjects.map((proj) => {
-              const isSelected = selectedProject.chainId === proj.chainId && selectedProject.pairAddress === proj.pairAddress
-              return (
-                <button
-                  key={proj.pairAddress}
-                  type="button"
-                  role="tab"
-                  aria-selected={isSelected}
-                  className={`project-tab-card ${isSelected ? 'selected' : ''} ${flashingProjectIds.includes(`${proj.chainId}:${proj.pairAddress}`) ? 'market-flash' : ''}`}
-                  onClick={() => setSelectedProject(proj)}
-                >
-                  <span className="project-tab-image-wrap">
-                    {proj.imageUrl && <img src={proj.imageUrl} alt={proj.symbol} className="project-tab-logo" onError={(event) => { event.currentTarget.style.display = 'none' }} />}
-                    <span className="project-tab-logo-fallback" aria-hidden="true">{proj.symbol.slice(0, 1)}</span>
-                  </span>
-                  <div className="project-tab-info">
-                    <div className="project-tab-top">
-                      <strong className="project-tab-sym">{proj.symbol}</strong>
-                      <span className={`project-tab-chg ${proj.change24h >= 0 ? 'pos' : 'neg'}`}>
-                        {proj.change24h >= 0 ? '+' : ''}{proj.change24h.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="project-tab-bottom">
-                      <span className="project-tab-price">${formatPriceNumber(proj.priceUsd)}</span>
-                      <span className="project-chain-tag">{formatChainName(proj.chainId)}</span>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Chart Stage & Top Project Radar View */}
-          <div className="chart-stage-container">
-            <div className="chart-stage-header">
-              <div className="stage-project-meta">
-                <img src={selectedProject.imageUrl} alt={selectedProject.symbol} className="stage-token-avatar" />
-                <div>
-                  <div className="stage-token-name-row">
-                    <h3>{selectedProject.name}</h3>
-                    <span className="token-symbol-tag">{selectedProject.symbol}</span>
-                    <span className="token-symbol-tag network-tag">{formatChainName(selectedProject.chainId)}</span>
-                    <a
-                      href={selectedProject.dexUrl ?? `https://dexscreener.com/${selectedProject.chainId}/${selectedProject.pairAddress}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="dexscreener-link-btn"
-                    >
-                      DexScreener Live ↗
-                    </a>
-                  </div>
-                  <div className="stage-submetrics">
-                    <span>Price: <b>${formatPriceNumber(selectedProject.priceUsd)}</b></span>
-                    <span>24h Vol: <b>{formatVolume(selectedProject.volume24h)}</b></span>
-                    <span>Liquidity: <b>{formatVolume(selectedProject.liquidity)}</b></span>
-                    <span>Low Entry: <b className="green-txt">${formatPriceNumber(selectedProject.lowEntryPrice)}</b></span>
-                    <span>Peak Gain: <b className="cyan-txt">{selectedProject.maxMultiplier}</b></span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="chart-mode-toggles">
-                <button
-                  type="button"
-                  className={`chart-mode-btn ${chartMode === 'embed' ? 'active' : ''}`}
-                  onClick={() => setChartMode('embed')}
-                >
-                  📊 DexScreener Live Chart
-                </button>
-                <button
-                  type="button"
-                  className={`chart-mode-btn ${chartMode === 'radar' ? 'active' : ''}`}
-                  onClick={() => setChartMode('radar')}
-                >
-                  🎯 Low-Entry Sniper Horizon
-                </button>
-              </div>
-            </div>
-
-            {/* Chart Body */}
-            <div className="chart-stage-viewport">
-              {chartMode === 'embed' ? (
-                <div className="dexscreener-embed-wrapper">
-                  <div className="embed-corner-hud top-left"></div>
-                  <div className="embed-corner-hud top-right"></div>
-                  <div className="embed-corner-hud bottom-left"></div>
-                  <div className="embed-corner-hud bottom-right"></div>
-                  <iframe
-                    title={`Chart for ${selectedProject.symbol}`}
-                    src={`https://dexscreener.com/${selectedProject.chainId}/${selectedProject.pairAddress}?embed=1&theme=dark&trades=0&info=0`}
-                    className="dexscreener-iframe"
-                    loading="lazy"
-                  ></iframe>
-                </div>
-              ) : (
-                <div className="sniper-radar-curve-container">
-                  <div className="radar-curve-legend">
-                    <span className="legend-tag buy-point">
-                      <i></i> Bottom Entry Point (${formatPriceNumber(selectedProject.lowEntryPrice)})
-                    </span>
-                    <span className="legend-tag exit-point">
-                      <i></i> Current / Sold (${formatPriceNumber(selectedProject.priceUsd)})
-                    </span>
-                    <span className="legend-tag gain-mult">
-                      <i></i> Max Multiplier: {selectedProject.maxMultiplier}
-                    </span>
-                  </div>
-
-                  <div className="radar-svg-wrapper">
-                    <svg viewBox="0 0 800 240" className="sniper-pnl-svg" preserveAspectRatio="none">
-                      <defs>
-                        <linearGradient id="pnlGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor="#2af2df" stopOpacity="0.4" />
-                          <stop offset="60%" stopColor="#da36ff" stopOpacity="0.1" />
-                          <stop offset="100%" stopColor="#050608" stopOpacity="0" />
-                        </linearGradient>
-                        <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
-                          <feGaussianBlur stdDeviation="4" result="blur" />
-                          <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                          </feMerge>
-                        </filter>
-                      </defs>
-
-                      {/* Grid lines */}
-                      <line x1="50" y1="40" x2="760" y2="40" stroke="#22252c" strokeDasharray="4 4" />
-                      <line x1="50" y1="100" x2="760" y2="100" stroke="#22252c" strokeDasharray="4 4" />
-                      <line x1="50" y1="160" x2="760" y2="160" stroke="#22252c" strokeDasharray="4 4" />
-                      <line x1="50" y1="210" x2="760" y2="210" stroke="#333842" />
-
-                      {/* Fill area */}
-                      <path
-                        d="M 60 205 Q 180 204 320 185 T 520 90 T 740 45 L 740 210 L 60 210 Z"
-                        fill="url(#pnlGrad)"
-                      />
-
-                      {/* Main rocket curve */}
-                      <path
-                        d="M 60 205 Q 180 204 320 185 T 520 90 T 740 45"
-                        fill="none"
-                        stroke="#2af2df"
-                        strokeWidth="3.5"
-                        filter="url(#glowEffect)"
-                      />
-
-                      {/* Bottom buy pin */}
-                      <circle cx="100" cy="204" r="7" fill="#00ff88" stroke="#041411" strokeWidth="2" />
-                      <circle cx="100" cy="204" r="14" fill="none" stroke="#00ff88" opacity="0.4" strokeWidth="1.5" />
-                      <text x="115" y="200" fill="#00ff88" fontSize="11" fontFamily="'JetBrains Mono', monospace" fontWeight="700">
-                        🟢 BOUGHT HERE (${formatPriceNumber(selectedProject.lowEntryPrice)})
-                      </text>
-
-                      {/* Mid accumulator pin */}
-                      <circle cx="340" cy="180" r="5" fill="#2af2df" stroke="#041411" strokeWidth="2" />
-                      <text x="355" y="175" fill="#2af2df" fontSize="10" fontFamily="'JetBrains Mono', monospace">
-                        Whale Accumulation Zone (+2.4x)
-                      </text>
-
-                      {/* Rocket peak pin */}
-                      <circle cx="735" cy="48" r="8" fill="#da36ff" stroke="#041411" strokeWidth="2" />
-                      <circle cx="735" cy="48" r="17" fill="none" stroke="#da36ff" opacity="0.5" strokeWidth="2" />
-                      <text x="610" y="38" fill="#da36ff" fontSize="12" fontFamily="'JetBrains Mono', monospace" fontWeight="800">
-                        🚀 MASSIVE PROFIT ({selectedProject.maxMultiplier})
-                      </text>
-                    </svg>
-
-                    <div className="radar-interactive-prompt">
-                      <span>💡 <b>Radar Insight:</b> Early snipers who bought within the first 60 seconds captured up to <b>{selectedProject.maxMultiplier}</b> on {selectedProject.symbol}.</span>
-                      <a href={BOT_LINK} target="_blank" rel="noreferrer" className="radar-cta-btn">
-                        Set Auto-Sniper for next launch ⚡
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Top Traders Leaderboard Controls */}
-          <div className="traders-table-controls">
-            <div className="controls-left">
-              <span className="table-caption">TOP TRADERS & PROFIT RADAR</span>
-              <div className="filter-pill-group">
-                <button
-                  type="button"
-                  className={`filter-pill ${tradersFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setTradersFilter('all')}
-                >
-                  🔥 All Snipers & Whales
-                </button>
-                <button
-                  type="button"
-                  className={`filter-pill ${tradersFilter === 'dune' ? 'active' : ''}`}
-                  onClick={() => setTradersFilter('dune')}
-                >
-                  🏆 Dune Analytics Smart Money
-                </button>
-                <button
-                  type="button"
-                  className={`filter-pill ${tradersFilter === 'pumpportal' ? 'active' : ''}`}
-                  onClick={() => setTradersFilter('pumpportal')}
-                >
-                  ⚡ PumpPortal Live On-Chain
-                </button>
-                <button
-                  type="button"
-                  className={`filter-pill ${tradersFilter === 'low-buy' ? 'active' : ''}`}
-                  onClick={() => setTradersFilter('low-buy')}
-                >
-                  💎 Bought Low (&lt;$500) ➔ Massive Gains
-                </button>
-              </div>
-            </div>
-            <div className="controls-right">
-              <small className="update-pulse">
-                <i className="pulse-dot"></i> Dune Verified + PumpPortal Live Stream
-              </small>
-            </div>
-          </div>
-
-          {/* Top Traders Table */}
-          <div className="traders-table-container">
-            <div className="traders-table-head" role="row">
-              <span>RANK / WALLET</span>
-              <span>PROJECT SNIPED</span>
-              <span>BOUGHT LOW (ENTRY)</span>
-              <span>BOUGHT IN DOLLARS ($ & SOL)</span>
-              <span>MASSIVE PROFIT MADE ($ & SOL)</span>
-              <span>GAIN MULTIPLIER</span>
-              <span>DATA SOURCE</span>
-              <span>ACTION</span>
-            </div>
-
-            <div className="traders-table-body">
-              {filteredTraders.map((trader, index) => (
-                <div
-                  className={`trader-row ${trader.isNew ? 'flash-row' : ''}`}
-                  key={trader.id}
-                  onClick={() => setSelectedTraderModal(trader)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') setSelectedTraderModal(trader)
-                  }}
-                >
-                  <div className="trader-cell-wallet">
-                    <span className="trader-rank-idx">#{index + 1}</span>
-                    <div className="trader-wallet-info">
-                      <strong className="trader-address-txt">{trader.wallet}</strong>
-                      <span className="trader-badge-tag">{trader.rankBadge}</span>
-                    </div>
-                  </div>
-
-                  <div className="trader-cell-token">
-                    <img src={trader.tokenLogo} alt={trader.tokenSymbol} className="token-dex-logo" />
-                    <div>
-                      <strong>{trader.tokenSymbol}</strong>
-                      <small>{trader.tokenName}</small>
-                    </div>
-                  </div>
-
-                  <div className="trader-cell-buy">
-                    <span className="bought-low-tag">🟢 BOUGHT AT</span>
-                    <strong>${formatPriceNumber(trader.buyPrice)}</strong>
-                    <small>{trader.snipeSpeed}</small>
-                  </div>
-
-                  <div className="trader-cell-invested">
-                    <strong className="bought-dollar-val">${trader.buyUsd.toLocaleString()}</strong>
-                    <small className="bought-sol-val">{trader.buySol} SOL</small>
-                  </div>
-
-                  <div className="trader-cell-profit">
-                    <strong className="profit-usd-text">+${trader.profitUsd.toLocaleString()}</strong>
-                    <span className="profit-sol-text">+{trader.profitSol.toLocaleString()} SOL</span>
-                  </div>
-
-                  <div className="trader-cell-multiplier">
-                    <span className="multiplier-pill">
-                      ⚡ +{trader.multiplier}x
-                    </span>
-                  </div>
-
-                  <div className="trader-cell-source">
-                    <span className={`source-badge ${trader.source === 'dune' ? 'dune-source' : 'pump-source'}`}>
-                      {trader.source === 'pumpportal' ? '⚡ ' : '🏆 '}{trader.sourceLabel}
-                    </span>
-                    <small className="time-ago-sub">{trader.timeAgo}</small>
-                  </div>
-
-                  <div className="trader-cell-action">
-                    <a
-                      href={BOT_LINK}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="copy-snipe-btn"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Copy Snipe ⚡
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION: 24H TOP VOLUME MULTI-CHAIN COINS (WITH TOKEN LOGOS) */}
-        <section className="volume-section" id="top-volume">
-          <div className="volume-heading">
-            <div>
-              <span className="micro-label">MULTI-CHAIN MARKETS / 24H</span>
-              <h2>
-                Top volume <span>coins</span>
-              </h2>
-              <p>Assets across supported networks ranked by reported 24-hour market volume with live token logos.</p>
-            </div>
-            <div className="volume-source">
-              <span className={`feed-state ${volumeStatus}`}>
-                <i></i>
-                {volumeStatus === 'live' ? 'LIVE FEED' : volumeStatus === 'error' ? 'FEED UNAVAILABLE' : 'LOADING FEED'}
-              </span>
-              <small>Turbo Snipe market feed · refreshes every 45s</small>
-            </div>
-          </div>
-
-          <div className="volume-table" role="table" aria-label="Top multi-chain coins by 24-hour volume">
-            <div className="volume-table-head" role="row">
-              <span role="columnheader"># / TOKEN</span>
-              <span role="columnheader">ASSET NAME</span>
-              <span role="columnheader">PRICE</span>
-              <span role="columnheader">24H CHANGE</span>
-              <span role="columnheader">24H VOLUME</span>
-              <span role="columnheader"></span>
-            </div>
-
-            {topVolumeCoins.length > 0 ? (
-              topVolumeCoins.map((coin, index) => (
-                <div className={`volume-row ${flashingCoinIds.includes(`${coin.chainId}:${coin.address}`) ? 'market-flash' : ''}`} role="row" key={`${coin.chainId}:${coin.address || index}`}>
-                  <div className="volume-token" role="cell">
-                    <b>{String(index + 1).padStart(2, '0')}</b>
-                    <div className="token-avatar-box">
-                      {coin.imageUrl ? (
-                        <img
-                          src={coin.imageUrl}
-                          alt={coin.symbol}
-                          className="coin-dex-logo-img"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                            const sibling = e.currentTarget.nextElementSibling as HTMLElement | null
-                            if (sibling) sibling.style.display = 'grid'
-                          }}
-                        />
-                      ) : null}
-                      <i
-                        className="token-avatar-fallback"
-                        style={{ display: coin.imageUrl ? 'none' : 'grid' }}
-                      >
-                        {coin.symbol.slice(0, 1)}
-                      </i>
-                    </div>
-                    <strong>{coin.symbol}</strong>
-                  </div>
-
-                  <span className="volume-pair" role="cell">
-                    <span className="volume-chain-tag">{formatChainName(coin.chainId)}</span> {coin.pair}
-                  </span>
-
-                  <span className="volume-price" role="cell">
-                    {coin.priceUsd ? `$${formatPriceNumber(coin.priceUsd)}` : '—'}
-                  </span>
-
-                  <span
-                    className={`volume-change ${coin.change === null ? '' : coin.change >= 0 ? 'positive' : 'negative'
-                      }`}
-                    role="cell"
-                  >
-                    {coin.change === null ? '—' : `${coin.change >= 0 ? '+' : ''}${coin.change.toFixed(2)}%`}
-                  </span>
-
-                  <span className="volume-total" role="cell">
-                    {formatVolume(coin.volume)}
-                  </span>
-
-                  {coin.chainId === 'solana' ? (
-                    <a className="volume-snipe" href={BOT_LINK} target="_blank" rel="noreferrer" aria-label={`Snipe ${coin.symbol} with Turbo Sniper bot`}>
-                      Snipe <span aria-hidden="true">↗</span>
-                    </a>
-                  ) : (
-                    <a className="volume-snipe" href={`https://dexscreener.com/${coin.chainId}/${coin.pairAddress}`} target="_blank" rel="noreferrer" aria-label={`View ${coin.symbol} on ${formatChainName(coin.chainId)}`}>
-                      View <span aria-hidden="true">↗</span>
-                    </a>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="volume-empty">
-                {volumeStatus === 'error'
-                  ? 'Market data could not load. Try again shortly.'
-                  : 'Scanning multi-chain markets and token logos…'}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* SIGNAL STRIP */}
-        <section className="signal-strip" id="signals" aria-label="Platform focus">
-          <div className="strip-heading">
-            <span className="micro-label">THE TURBO EDGE</span>
-            <span>TOOLS FOR THE MOMENT THAT MATTERS.</span>
-          </div>
-          <div className="strip-item">
-            <span className="strip-number">01</span>
-            <span className="strip-symbol">⌁</span>
-            <span>
-              <strong>Find momentum</strong>
-              <small>Spot whale buys seconds before breakout</small>
-            </span>
-          </div>
-          <div className="strip-item">
-            <span className="strip-number">02</span>
-            <span className="strip-symbol">◎</span>
-            <span>
-              <strong>Read the setup</strong>
-              <small>Dune smart money & PumpPortal live stream</small>
-            </span>
-          </div>
-          <div className="strip-item">
-            <span className="strip-number">03</span>
-            <span className="strip-symbol">↗</span>
-            <span>
-              <strong>Move with intent</strong>
-              <small>Sub-second execution in Telegram bot</small>
-            </span>
-          </div>
-        </section>
-
-        {/* SECTION: TURBO SNIPER BOT OVERVIEW & WALLET TERMINAL (At the Bottom) */}
-        <section className="bot-overview-section" id="bot-terminal">
-          <div className="bot-overview-header">
-            <div className="section-eyebrow">
-              <span className="status-dot"></span> 04 / TURBO SNIPER BOT TERMINAL
-            </div>
-            <h2>
-              Turbo Sniper Pro <span>Bot Overview</span>
-            </h2>
-            <p>
-              Connect your wallet, configure MEV guard, set auto-buy slippage, and execute sub-second snipes directly inside Telegram.
-            </p>
-          </div>
-
-          <div className="terminal-wrap bot-wrap" id="terminal">
-            <div className="terminal-glow"></div>
-            <div className="terminal-card bot-card">
-              <div className="terminal-topbar">
-                <div className="window-dots">
-                  <i></i>
-                  <i></i>
-                  <i></i>
-                </div>
-                <span className="terminal-title">
-                  ⚡ TURBOSNIPER PRO <span> / </span> BOT OVERVIEW
-                </span>
-                <span className="live-indicator">
-                  <i></i> TELEGRAM
-                </span>
-              </div>
-              <div className="bot-content">
-                <div className="hero-official-badge">
-                  <img src="/logo.png" alt="Turbo Sniper Pro Emblem" className="hero-badge-img" />
-                  <div className="hero-badge-meta">
-                    <strong>TURBO SNIPER PRO v3.2</strong>
-                    <span>DUNE SMART MONEY • PUMPPORTAL LIVE • MEV GUARD</span>
-                  </div>
-                </div>
-
-                <div className="bot-info-block">
-                  <div className="bot-block-title">
-                    <span>◉</span> WALLET OVERVIEW <i></i>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">⌑</span>
-                    <span>Address</span>
-                    <strong>Open Telegram bot to connect</strong>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">◈</span>
-                    <span>Balance</span>
-                    <strong className="info-muted">Available in bot after connect</strong>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">↗</span>
-                    <span>SOL Price</span>
-                    <strong>
-                      {solPrice === null ? 'Connecting…' : formatUsd(solPrice)}{' '}
-                      <i className={`inline-feed-dot ${priceStatus}`}></i>
-                    </strong>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">⛨</span>
-                    <span>Trade controls</span>
-                    <strong className="info-muted">Managed in Telegram</strong>
-                  </div>
-                </div>
-
-                <div className="bot-info-block">
-                  <div className="bot-block-title">
-                    <span>▥</span> PORTFOLIO PULSE <i></i>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">◉</span>
-                    <span>Open Tokens</span>
-                    <strong className="info-muted">Connect bot to view</strong>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">◎</span>
-                    <span>Active Snipes</span>
-                    <strong className="info-muted">Managed by your bot</strong>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">◇</span>
-                    <span>Net Portfolio</span>
-                    <strong className="info-muted">Not connected</strong>
-                  </div>
-                </div>
-
-                <div className="bot-info-block radar-block">
-                  <div className="bot-block-title">
-                    <span>⌖</span> LIVE MARKET RADAR <i></i>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">◉</span>
-                    <span>Network</span>
-                    <strong>Solana mainnet</strong>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">↗</span>
-                    <span>PumpPortal Feed</span>
-                    <strong>
-                      {pumpPortalConnected ? 'WebSocket connected (streaming)' : 'On-chain stream active'}
-                    </strong>
-                  </div>
-                  <div className="bot-info-line">
-                    <span className="bot-info-icon">ϟ</span>
-                    <span>Execution</span>
-                    <strong>Turbo Sniper Telegram bot</strong>
-                  </div>
-                </div>
-
-                <div className="bot-quick-action">
-                  <div>
-                    <span className="quick-bolt">ϟ</span>
-                    <strong>Ready to snipe?</strong>
-                    <small>Open the bot to connect your wallet and trade.</small>
-                  </div>
-                  <a href={BOT_LINK} target="_blank" rel="noreferrer" className="bot-launch-button">
-                    Open Turbo bot <span aria-hidden="true">↗</span>
-                  </a>
-                </div>
-
-                <div className="bot-actions-grid">
-                  {['Quick Buy', 'Quick Sell', 'Active Positions', 'Copy Trading', 'Wallet Hub', 'Price Alerts'].map(
-                    (action, index) => (
-                      <a key={action} href={BOT_LINK} target="_blank" rel="noreferrer" className="bot-action-link">
-                        <span>{['●', '●', '◎', '♧', '◈', '◉'][index]}</span>
-                        {action}
-                        <b>↗</b>
-                      </a>
-                    )
-                  )}
-                </div>
-                <div className="bot-disclaimer">Wallet balances and bot actions appear inside Telegram after you connect.</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* APPROACH SECTION */}
-        <section className="approach-section" id="approach">
-          <div className="approach-kicker">
-            <span className="status-dot"></span> LESS NOISE. MORE SIGNAL.
-          </div>
-          <h2>
-            Built for the <span>decisive.</span>
-          </h2>
-          <p>Markets move in milliseconds. Turbo Sniper Pro gives you the radar, speed, and precision to capture the run.</p>
-          <a className="button-primary" href={BOT_LINK} target="_blank" rel="noreferrer">
-            Launch Telegram Bot <span aria-hidden="true">↗</span>
-          </a>
-          <div className="approach-orbit orbit-one"></div>
-          <div className="approach-orbit orbit-two"></div>
-          <span className="orbit-cross cross-one">+</span>
-          <span className="orbit-cross cross-two">+</span>
-        </section>
-      </main>
-
-      {/* FOOTER */}
-      <footer className="site-footer">
-        <a className="brand footer-brand" href="#top">
-          <div className="brand-logo-wrap footer-logo">
-            <img src="/logo.png" alt="Turbo Sniper Pro" className="brand-logo-img" />
-          </div>
-          <div className="brand-text">
-            <span className="brand-name">
-              TURBO<span>SNIPER</span><b>PRO</b>
-            </span>
-            <span className="brand-sub">SNIP • TRADE • PROFIT</span>
-          </div>
-        </a>
-        <span className="footer-note">TRADE WITH A PLAN. STAY IN CONTROL.</span>
-        <span className="footer-legal">
-          © 2026 TURBO SNIPER PRO <i></i> DUNE & PUMPPORTAL ON-CHAIN FEEDS
-        </span>
-      </footer>
-    </div>
-  )
+  /* Project Selector Strip Horizontal Scroll on Mobile */
+  .project-selector-strip {
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 10px;
+    gap: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cyan) #0b0f15;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .project-tab-card {
+    flex: 0 0 170px !important;
+    min-width: 170px !important;
+  }
+
+  .profit-table-wrap,
+  .terminal-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .traders-table-container,
+  .volume-table-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  .radar-ticker-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+  }
+  .radar-badge {
+    font-size: 11px; /* was 9px (+2px) */
+    padding: 3px 8px;
+  }
+  .ticker-stat {
+    font-size: 12px; /* was 10px (+2px) */
+    margin-left: auto;
+  }
+  .ticker-text {
+    width: 100%;
+    min-width: 0;
+    font-size: 13px; /* was 11px (+2px) */
+    line-height: 1.45;
+    word-break: break-word;
+    order: 2;
+  }
+  .ticker-cta {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 12px; /* was 10px (+2px) */
+    order: 3;
+    border-radius: 4px;
+  }
+
+  /* Hero Section */
+  .hero-section {
+    padding: 34px 16px 28px;
+    gap: 32px;
+    min-height: auto;
+  }
+  .hero-copy {
+    max-width: 100%;
+  }
+  .hero-copy h1 {
+    font-size: clamp(32px, 8.8vw, 48px); /* was 30px to 46px (+2px) */
+    margin: 14px 0 12px;
+    line-height: 1.1;
+  }
+  .hero-description {
+    font-size: 15px; /* was 13px (+2px) */
+    line-height: 1.6;
+    max-width: 100%;
+  }
+  .hero-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 22px;
+  }
+  .hero-actions .button-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 13px 18px;
+    font-size: 13.5px; /* was 11.5px (+2px) */
+  }
+  .hero-actions .text-link {
+    text-align: center;
+    padding: 6px 0;
+    font-size: 13px; /* (+2px) */
+  }
+  .hero-footnote {
+    margin-top: 24px;
+    font-size: 11.5px; /* was 9.5px (+2px) */
+  }
+  .hero-index {
+    display: none;
+  }
+
+  /* Tracked Profit Table in Hero (Mobile) */
+  .profit-table-wrap {
+    max-width: 100%;
+    margin-top: 6px;
+  }
+  .profit-card-body {
+    padding: 12px;
+    gap: 12px;
+  }
+  .metric-label {
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .metric-value {
+    font-size: 19px; /* (+2px) */
+  }
+  .source-pill {
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .metric-sub {
+    font-size: 10.5px; /* was 8.5px (+2px) */
+  }
+  .profit-table-head {
+    font-size: 10.5px; /* was 8.5px (+2px) */
+    padding: 8px 10px;
+  }
+  .profit-table-row {
+    font-size: 12px;
+    padding: 9px 10px;
+  }
+  .profit-token-names strong {
+    font-size: 13px; /* was 11px (+2px) */
+  }
+  .profit-token-names small {
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .profit-entry-cell strong {
+    font-size: 13.5px; /* was 11.5px (+2px) */
+  }
+  .profit-entry-cell small {
+    font-size: 10.5px; /* was 8.5px (+2px) */
+  }
+  .profit-multiplier-badge {
+    font-size: 12px; /* was 10px (+2px) */
+  }
+  .profit-gain-usd {
+    font-size: 14.5px; /* was 12.5px (+2px) */
+  }
+  .profit-gain-sol {
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .profit-source-pill {
+    font-size: 10.5px; /* was 8.5px (+2px) */
+  }
+  .profit-footer-stats {
+    font-size: 11px; /* was 9px (+2px) */
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+  .view-leaderboard-btn,
+  .snipe-now-btn {
+    font-size: 12px; /* was 10px (+2px) */
+    padding: 9px 10px;
+  }
+
+  /* Bot Overview Section (Mobile) */
+  .bot-overview-section {
+    padding: 44px 16px 36px;
+  }
+  .bot-overview-header {
+    margin-bottom: 24px;
+  }
+  .bot-overview-header h2 {
+    font-size: clamp(25px, 6.5vw, 34px);
+    margin: 6px 0 10px;
+  }
+  .bot-overview-header p {
+    font-size: 14px; /* was 12px (+2px) */
+  }
+  .terminal-card {
+    border-radius: 6px;
+  }
+  .bot-content {
+    padding: 14px 12px;
+  }
+  .hero-official-badge {
+    padding: 8px 10px;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .hero-badge-img {
+    width: 36px;
+    height: 36px;
+  }
+  .hero-badge-meta strong {
+    font-size: 13px; /* was 11px (+2px) */
+  }
+  .hero-badge-meta span {
+    font-size: 9.5px; /* was 7.5px (+2px) */
+  }
+  .bot-info-line {
+    grid-template-columns: 20px 92px minmax(0, 1fr);
+    font-size: 12.5px; /* was 10.5px (+2px) */
+  }
+  .bot-quick-action {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    text-align: center;
+    padding: 14px;
+  }
+  .bot-quick-action strong {
+    font-size: 14px;
+  }
+  .bot-quick-action small {
+    font-size: 12px;
+  }
+  .bot-launch-button {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    font-size: 13px;
+  }
+  .bot-actions-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .bot-action-link {
+    height: 36px;
+    padding: 0 8px;
+    font-size: 11.5px; /* was 9.5px (+2px) */
+  }
+  .bot-disclaimer {
+    font-size: 11px;
+  }
+
+  /* Top Traders Section */
+  .top-traders-section {
+    padding: 44px 16px 36px;
+  }
+  .traders-section-header {
+    gap: 14px;
+    margin-bottom: 18px;
+    align-items: flex-start;
+  }
+  .traders-section-header h2 {
+    font-size: clamp(25px, 6.5vw, 34px); /* was 23px (+2px) */
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+  .traders-section-header p {
+    font-size: 14px; /* was 12px (+2px) */
+    line-height: 1.55;
+    max-width: 100%;
+  }
+  .traders-stats-pills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .stat-pill {
+    padding: 9px 10px;
+  }
+  .stat-pill-label {
+    font-size: 10px; /* was 8px (+2px) */
+  }
+  .stat-pill-value {
+    font-size: 15.5px; /* was 13.5px (+2px) */
+  }
+  .stream-badge {
+    grid-column: 1 / -1;
+    justify-content: center;
+    padding: 7px 12px;
+    font-size: 11.5px; /* was 9.5px (+2px) */
+  }
+  .market-refresh-icon {
+    display: none;
+  }
+
+  /* Project Selector Tabs */
+  .project-selector-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .project-tab-card {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .project-tab-image-wrap {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+  }
+  .project-tab-logo {
+    width: 30px;
+    height: 30px;
+  }
+  .project-tab-sym {
+    font-size: 14px; /* was 12px (+2px) */
+  }
+  .project-tab-chg {
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .project-tab-price {
+    font-size: 12px; /* was 10px (+2px) */
+  }
+  .project-chain-tag {
+    font-size: 9.5px; /* was 7.5px (+2px) */
+    padding: 1px 4px;
+  }
+
+  /* Chart Stage */
+  .chart-stage-container {
+    margin-bottom: 24px;
+  }
+  .chart-stage-header {
+    padding: 14px 12px;
+    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stage-project-meta {
+    gap: 10px;
+    width: 100%;
+  }
+  .stage-token-avatar {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+  .stage-token-name-row {
+    flex-wrap: wrap;
+    gap: 5px 8px;
+  }
+  .stage-token-name-row h3 {
+    font-size: 17px; /* was 15px (+2px) */
+  }
+  .stage-submetrics {
+    gap: 6px 10px;
+    font-size: 12px; /* was 10px (+2px) */
+    width: 100%;
+  }
+  .chart-mode-toggles {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .chart-mode-btn {
+    padding: 8px 6px;
+    font-size: 11.5px; /* was 9.5px (+2px) */
+    text-align: center;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+  .chart-stage-viewport {
+    min-height: 380px;
+  }
+  .dexscreener-embed-wrapper {
+    height: 400px;
+  }
+  .sniper-radar-curve-container {
+    padding: 14px 10px;
+  }
+  .sniper-pnl-svg {
+    height: 180px;
+  }
+  .radar-curve-legend {
+    gap: 6px 12px;
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .radar-interactive-prompt {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    text-align: center;
+    padding: 12px;
+    font-size: 13px; /* (+2px) */
+  }
+  .radar-cta-btn {
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  /* Traders Leaderboard Controls */
+  .traders-table-controls {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .controls-left {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .table-caption {
+    font-size: 13px; /* was 11px (+2px) */
+  }
+  .filter-pill-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+  .filter-pill {
+    padding: 7px 6px;
+    font-size: 11px; /* was 9px (+2px) */
+    text-align: center;
+    justify-content: center;
+  }
+  .controls-right {
+    width: 100%;
+  }
+  .update-pulse {
+    font-size: 10.5px; /* was 8.5px (+2px) */
+  }
+  .traders-table-container {
+    box-shadow: inset -10px 0 10px -8px rgba(76, 137, 255, 0.35);
+  }
+  .traders-table-head {
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .trader-address-txt {
+    font-size: 14px; /* was 12px (+2px) */
+  }
+  .trader-badge-tag {
+    font-size: 10px; /* was 8px (+2px) */
+  }
+  .trader-cell-token strong {
+    font-size: 14px; /* was 12px (+2px) */
+  }
+  .trader-cell-token small {
+    font-size: 12px; /* was 10px (+2px) */
+  }
+  .bought-dollar-val {
+    font-size: 15px !important; /* was 13px (+2px) */
+  }
+  .bought-sol-val {
+    font-size: 12px; /* was 10px (+2px) */
+  }
+  .profit-usd-text {
+    font-size: 16px; /* was 14px (+2px) */
+  }
+  .profit-sol-text {
+    font-size: 12px; /* was 10px (+2px) */
+  }
+  .multiplier-pill {
+    font-size: 13px; /* was 11px (+2px) */
+  }
+  .source-badge {
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .time-ago-sub {
+    font-size: 10px; /* was 8px (+2px) */
+  }
+  .copy-snipe-btn {
+    font-size: 12px; /* was 10px (+2px) */
+  }
+
+  /* Multi-Chain Volume Section */
+  .volume-section {
+    padding: 44px 16px 36px;
+  }
+  .volume-heading {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .volume-heading h2 {
+    font-size: clamp(25px, 6.5vw, 34px); /* was 23px (+2px) */
+    margin: 6px 0;
+  }
+  .volume-heading p {
+    font-size: 14px; /* was 12px (+2px) */
+  }
+  .volume-source {
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+  }
+  .volume-table {
+    box-shadow: inset -10px 0 10px -8px rgba(76, 137, 255, 0.35);
+  }
+  .volume-table-head {
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .volume-token strong {
+    font-size: 14px; /* was 12px (+2px) */
+  }
+  .volume-pair {
+    font-size: 13px; /* was 11px (+2px) */
+  }
+  .volume-price {
+    font-size: 14px; /* was 12px (+2px) */
+  }
+  .volume-change, .volume-total {
+    font-size: 14px; /* was 12px (+2px) */
+  }
+  .volume-snipe {
+    font-size: 12px; /* was 10px (+2px) */
+  }
+
+  /* Signal Strip & Approach Section */
+  .signal-strip {
+    grid-template-columns: 1fr;
+    padding: 24px 16px;
+    gap: 16px;
+    min-height: auto;
+  }
+  .strip-item {
+    gap: 12px;
+  }
+  .strip-item strong {
+    font-size: 15px; /* was 13px (+2px) */
+  }
+  .strip-item small {
+    font-size: 13px; /* was 11px (+2px) */
+  }
+  .strip-symbol {
+    width: 36px;
+    height: 36px;
+    font-size: 18px; /* was 16px (+2px) */
+  }
+  .approach-section {
+    padding: 46px 16px 40px;
+    min-height: auto;
+  }
+  .approach-section h2 {
+    font-size: clamp(26px, 6.8vw, 38px); /* was 24px (+2px) */
+  }
+  .approach-section p {
+    font-size: 15px; /* was 13px (+2px) */
+    line-height: 1.6;
+    max-width: 100%;
+  }
+  .approach-section .button-primary {
+    width: 100%;
+    justify-content: center;
+    font-size: 13.5px; /* was 11.5px (+2px) */
+  }
+  .approach-orbit,
+  .orbit-cross {
+    display: none;
+  }
+
+  /* Footer */
+  .site-footer {
+    padding: 24px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .footer-brand {
+    gap: 8px;
+  }
+  .footer-note {
+    display: none;
+  }
+  .footer-legal {
+    font-size: 11px; /* was 9px (+2px) */
+    line-height: 1.5;
+    color: #828a96;
+  }
+
+  /* Cookie Banner */
+  .cookie-consent,
+  .cookie-banner {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+  }
+  .cookie-banner p {
+    font-size: 13px; /* (+2px) */
+  }
+  .cookie-consent-actions,
+  .cookie-banner-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .cookie-terms-button,
+  .cookie-dismiss-button,
+  .cookie-accept-button {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+    font-size: 12px; /* (+2px) */
+  }
+
+  /* Trade Inspector Modal */
+  .trade-inspector-modal {
+    padding: 22px 14px;
+    width: 100%;
+    max-height: 88vh;
+  }
+  .modal-header h2 {
+    font-size: 21px; /* was 19px (+2px) */
+  }
+  .modal-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .modal-stat-box {
+    padding: 12px;
+  }
+  .modal-stat-label {
+    font-size: 11px; /* was 9px (+2px) */
+  }
+  .modal-stat-box strong {
+    font-size: 16px; /* was 14px (+2px) */
+  }
+  .profit-huge {
+    font-size: 24px !important; /* was 22px (+2px) */
+  }
+  .sol-huge {
+    font-size: 14px; /* was 12px (+2px) */
+  }
+  .modal-wallet-copy {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .modal-wallet-copy code {
+    font-size: 13px; /* was 11px (+2px) */
+    word-break: break-all;
+  }
+  .copy-btn,
+  .solscan-link {
+    font-size: 11.5px; /* was 9.5px (+2px) */
+    padding: 4px 7px;
+  }
+  .button-primary.full-width {
+    font-size: 13px; /* was 11px (+2px) */
+    padding: 12px;
+  }
 }
 
-export default App
+/* SMALL PHONES (max-width: 480px) */
+@media (max-width: 480px) {
+  .site-header {
+    height: 58px;
+    padding: 0 10px;
+  }
+  .brand {
+    gap: 6px;
+  }
+  .brand-logo-wrap {
+    width: 30px;
+    height: 30px;
+  }
+  .brand-name {
+    font-size: 12.5px;
+    letter-spacing: 0.3px;
+  }
+  .header-sol-price {
+    padding: 3px 6px;
+    margin-right: 6px;
+    gap: 3px;
+  }
+  .header-sol-price strong {
+    font-size: 11px;
+  }
+  .feed-state {
+    display: none; /* Hide feed state on small phones to keep hamburger menu perfectly framed */
+  }
+  .menu-toggle {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+  .resource-menu {
+    top: calc(100% + 4px);
+    right: 8px;
+    width: calc(100vw - 16px);
+    max-width: 250px;
+  }
+  .top-radar-ticker {
+    padding: 9px 12px;
+  }
+  .hero-section {
+    padding: 24px 10px 20px;
+    overflow-x: clip;
+    max-width: 100vw;
+  }
+  .profit-hero-metric {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px;
+  }
+  .metric-right {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .top-traders-section {
+    padding: 36px 12px 28px;
+  }
+  .volume-section {
+    padding: 36px 12px 28px;
+  }
+  .bot-overview-section {
+    padding: 36px 12px 28px;
+  }
+  .filter-pill-group {
+    grid-template-columns: 1fr;
+  }
+  .filter-pill {
+    font-size: 11px;
+  }
+  .project-selector-strip {
+    gap: 6px;
+  }
+  .project-tab-card {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .project-tab-sym {
+    font-size: 13px; /* was 11px (+2px) */
+  }
+  .project-tab-price {
+    font-size: 11.5px; /* was 9.5px (+2px) */
+  }
+  .dexscreener-embed-wrapper {
+    height: 360px;
+  }
+  .chart-stage-viewport {
+    min-height: 350px;
+  }
+  .profit-card-body {
+    padding: 10px;
+  }
+  .metric-value {
+    font-size: 17px;
+  }
+  .profit-table-head {
+    font-size: 10px;
+  }
+  .profit-token-names strong {
+    font-size: 12.5px;
+  }
+  .profit-gain-usd {
+    font-size: 13.5px;
+  }
+}
